@@ -32,6 +32,10 @@ abstract class srModelObjectTableGUI extends ilTable2GUI {
 	 */
 	protected $tabs;
 	/**
+	 * @var ilAccessHandler
+	 */
+	protected $access;
+	/**
 	 * @var int
 	 */
 	static $num = 0;
@@ -42,9 +46,10 @@ abstract class srModelObjectTableGUI extends ilTable2GUI {
 	 * @param string $a_parent_cmd
 	 */
 	public function __construct($a_parent_obj, $a_parent_cmd) {
-		global $ilCtrl, $ilTabs;
+		global $ilCtrl, $ilTabs, $ilAccess;
 		$this->ctrl = $ilCtrl;
 		$this->tabs = $ilTabs;
+		$this->access = $ilAccess;
 		if ($this->initLanguage() === false) {
 			global $lng;
 			$this->lng = $lng;
