@@ -7,7 +7,7 @@
  *
  * @description
  *
- * @version 1.0.12
+ * @version 1.0.14
  */
 class ActiveRecordList {
 
@@ -51,7 +51,14 @@ class ActiveRecordList {
 	 * @var
 	 */
 	protected $end;
+	/**
+	 * @var bool
+	 */
 	protected $debug = false;
+	/**
+	 * @var string
+	 */
+	protected static $last_query;
 
 
 	/**
@@ -175,6 +182,16 @@ class ActiveRecordList {
 
 
 	/**
+	 * @return array
+	 */
+	public function getFirstFromLastQuery() {
+		$this->loadLastQuery();
+
+		return array_shift(array_values($this->result));
+	}
+
+
+	/**
 	 * @return mixed
 	 */
 	public function first() {
@@ -263,25 +280,37 @@ class ActiveRecordList {
 		if ($this->loaded) {
 			return;
 		} else {
-			$q = $this->buildQuery();
-			$set = $this->db->query($q);
-			$this->result = array();
-			$this->result_array = array();
-			while ($res = $this->db->fetchAssoc($set)) {
-				/**
-				 * @var $obj ActiveRecord
-				 */
-				$obj = new $this->class();
-				if ($obj::returnPrimaryFieldName() === 'id') {
-					$this->result[$res['id']] = $obj->buildFromArray($res);
-					$this->result_array[$res['id']] = $res;
-				} else {
-					$this->result[$res[$obj::returnPrimaryFieldName()]] = $obj->buildFromArray($res);
-					$this->result_array[$res[$obj::returnPrimaryFieldName()]] = $res;
-				}
-			}
-			$this->loaded = true;
+			$this->readFromDb($this->buildQuery());
 		}
+	}
+
+
+	private function loadLastQuery() {
+		$this->readFromDb(self::$last_query);
+	}
+
+
+	/**
+	 * @param $q
+	 */
+	private function readFromDb($q) {
+		$set = $this->db->query($q);
+		$this->result = array();
+		$this->result_array = array();
+		while ($res = $this->db->fetchAssoc($set)) {
+			/**
+			 * @var $obj ActiveRecord
+			 */
+			$obj = new $this->class();
+			if ($obj::returnPrimaryFieldName() === 'id') {
+				$this->result[$res['id']] = $obj->buildFromArray($res);
+				$this->result_array[$res['id']] = $res;
+			} else {
+				$this->result[$res[$obj::returnPrimaryFieldName()]] = $obj->buildFromArray($res);
+				$this->result_array[$res[$obj::returnPrimaryFieldName()]] = $res;
+			}
+		}
+		$this->loaded = true;
 	}
 
 
@@ -334,6 +363,7 @@ class ActiveRecordList {
 		if ($this->debug) {
 			var_dump($q); // FSX
 		}
+		self::$last_query = $q;
 
 		return $q;
 	}

@@ -547,6 +547,16 @@ abstract class ActiveRecord {
 
 
 	/**
+	 * @return mixed
+	 */
+	public static function getFirstFromLastQuery() {
+		$srModelObjectList = new ActiveRecordList(get_called_class());
+
+		return $srModelObjectList->getFirstFromLastQuery();
+	}
+
+
+	/**
 	 * @param null $key
 	 * @param null $values
 	 *
