@@ -9,7 +9,7 @@ require_once('class.ActiveRecordList.php');
  *
  * @description
  *
- * @version 1.0.16
+ * @version 1.0.17
  */
 abstract class ActiveRecord {
 
@@ -160,6 +160,8 @@ abstract class ActiveRecord {
 			if (self::returnPrimaryFieldType() === 'integer') {
 				$this->db->createSequence($this->returnDbTableName());
 			}
+		} else {
+			$this->updateDB();
 		}
 
 		return true;
