@@ -187,6 +187,71 @@ abstract class srModelObjectTableGUI extends ilTable2GUI {
 			$this->tpl->parseCurrentBlock();
 		}
 	}
+
+
+	/**
+	 * @return mixed
+	 */
+	public function getNavStart() {
+		return $this->getNavigationParameter('from');
+	}
+
+
+	/**
+	 * @return mixed
+	 */
+	public function getNavStop() {
+		return $this->getNavigationParameter('to');
+	}
+
+
+	/**
+	 * @return mixed
+	 */
+	public function getNavSortField() {
+		return $this->getNavigationParameter('sort_field');
+	}
+
+
+	/**
+	 * @return mixed
+	 */
+	public function getNavorder() {
+		return $this->getNavigationParameter('order');
+	}
+
+
+	/**
+	 * @return array
+	 */
+	public function getNavigationParametersAsArray() {
+		global $ilUser;
+		/**
+		 * @var $ilUser ilObjUser
+		 */
+		$hits = $ilUser->getPref('hits_per_page');
+		$parameters = explode(':', $_GET[$this->getNavParameter()]);
+		$return_values = array(
+			'from' => $parameters[2] ? $parameters[2] : 0,
+			'to' => $parameters[2] ? $parameters[2] + $hits - 1 : $hits - 1,
+			'sort_field' => $parameters[0] ? $parameters[0] : false,
+			'order' => $parameters[1] ? strtoupper($parameters[1]) : 'ASC'
+		);
+
+		return $return_values;
+	}
+
+
+	/**
+	 * @param $param
+	 *
+	 * @return mixed
+	 */
+	public function getNavigationParameter($param) {
+		$array = $this->getNavigationParametersAsArray();
+
+		return $array[$param];
+	}
 }
 
 ?>
