@@ -1,6 +1,7 @@
 <?php
 require_once('./Services/Table/classes/class.ilTable2GUI.php');
 require_once('./Services/UIComponent/AdvancedSelectionList/classes/class.ilAdvancedSelectionListGUI.php');
+
 /**
  * @author  Fabian Schmid <fs@studer-raimann.ch>
  * @version 1.0.5
@@ -172,9 +173,7 @@ abstract class srModelObjectTableGUI extends ilTable2GUI {
 		if ($this->fillTableRow($a_set) === false) {
 			self::$num ++;
 			foreach ($a_set as $value) {
-				$this->tpl->setCurrentBlock('cell');
-				$this->tpl->setVariable('VALUE', $value ? $value : '&nbsp;');
-				$this->tpl->parseCurrentBlock();
+				$this->addCell($value);
 			}
 			$this->ctrl->setParameter($this->parent_obj, 'object_id', $a_set['id']);
 			$actions = new ilAdvancedSelectionListGUI();
@@ -186,6 +185,16 @@ abstract class srModelObjectTableGUI extends ilTable2GUI {
 			$this->tpl->setVariable('VALUE', $actions->getHTML());
 			$this->tpl->parseCurrentBlock();
 		}
+	}
+
+
+	/**
+	 * @param $value
+	 */
+	public function addCell($value) {
+		$this->tpl->setCurrentBlock('cell');
+		$this->tpl->setVariable('VALUE', $value ? $value : '&nbsp;');
+		$this->tpl->parseCurrentBlock();
 	}
 
 

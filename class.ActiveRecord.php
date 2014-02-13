@@ -282,14 +282,18 @@ abstract class ActiveRecord {
 
 	public function create() {
 		$class = get_class($this);
-		//TODO evtl. check field length etc.
-		if (self::returnPrimaryFieldName() === 'id') {
-			$this->setId($this->db->nextID($this->returnDbTableName()));
-			$this->db->insert($this->returnDbTableName(), $this->getArrayForDb());
-			self::$object_cache[$class][$this->getId()] = $this;
-		} else { // TODO dies zur normalen Methode machen. prüfen
-			$this->db->insert($this->returnDbTableName(), $this->getArrayForDb());
-			self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
+		// TODO evtl. check field length etc.
+		try {
+			if (self::returnPrimaryFieldName() === 'id') {
+				$this->setId($this->db->nextID($this->returnDbTableName()));
+				$this->db->insert($this->returnDbTableName(), $this->getArrayForDb());
+				self::$object_cache[$class][$this->getId()] = $this;
+			} else { // TODO dies zur normalen Methode machen. prüfen
+				$this->db->insert($this->returnDbTableName(), $this->getArrayForDb());
+				self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
+			}
+		} catch (Exception $e) {
+			echo $e->getMessage();
 		}
 	}
 
