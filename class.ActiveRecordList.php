@@ -145,7 +145,7 @@ class ActiveRecordList {
 
 
 	/**
-	 * @return mixed
+	 * @return int
 	 */
 	public function affectedRows() {
 		$q = $this->buildQuery();
@@ -156,7 +156,7 @@ class ActiveRecordList {
 
 
 	/**
-	 * @return mixed
+	 * @return int
 	 */
 	public function count() {
 		return $this->affectedRows();
