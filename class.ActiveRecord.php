@@ -9,7 +9,7 @@ require_once('class.ActiveRecordList.php');
  *
  * @description
  *
- * @version 1.0.17
+ * @version 1.1.01
  */
 abstract class ActiveRecord {
 
@@ -20,11 +20,32 @@ abstract class ActiveRecord {
 	/**
 	 * @var array
 	 */
+	protected static $form_fields = array();
+	/**
+	 * @var array
+	 */
 	protected static $primary_fields = array();
 	/**
 	 * @var array
 	 */
 	private static $object_cache = array();
+	/**
+	 * @var array
+	 */
+	protected static $possible_fields = array(
+		'db' => array(
+			'db_has_field',
+			'db_is_unique',
+			'db_is_primary',
+			'db_is_notnull',
+			'db_fieldtype',
+			'db_length',
+		),
+		'form' => array(
+			'form_has_field',
+			'form_type',
+		),
+	);
 
 
 	/**
@@ -91,6 +112,7 @@ abstract class ActiveRecord {
 		global $ilDB;
 		$this->db = $ilDB;
 		self::setDBFields($this);
+		self::setFormFields($this);
 		/**
 		 * @var $ilDB ilDB
 		 */
@@ -650,38 +672,14 @@ abstract class ActiveRecord {
 	 * @throws Exception
 	 */
 	private static function setDBFields(ActiveRecord $obj) {
-		$possible_attributes = array(
-			'db_has_field',
-			'db_is_unique',
-			'db_is_primary',
-			'db_is_notnull',
-			'db_fieldtype',
-			'db_length',
-		);
+
 		$class = get_class($obj);
 		if (! self::$db_fields[$class]) {
-			$reflectionClass = new ReflectionClass($obj);
-			$raw_fields = array();
-			foreach ($reflectionClass->getProperties() as $property) {
-				if ($property->getName() == 'fields') {
-					continue;
-				}
-				$properties = new stdClass();
-				foreach (explode("\n", $property->getDocComment()) as $line) {
-					if (preg_match("/[ ]*\\* @(db_[a-zA-Z0-9_]*)[ ]*([a-zA-Z0-9_]*)/u", $line, $matches)) {
-						$properties->{(string)$matches[1]} = $matches[2];
-					}
-				}
-				$raw_fields[$property->getName()] = $properties;
-			}
 			$fields = array();
 			$primary = 0;
-			foreach ($raw_fields as $fieldname => $rf) {
+			foreach (self::getAttributesByFilter($obj, 'db') as $fieldname => $rf) {
 				foreach ($rf as $k => $v) {
-					if (! in_array($k, $possible_attributes)) {
-						throw new Exception('Your field \'' . $fieldname . '\' in Class \'' . __CLASS__
-							. '\' has wrong attribute: ' . $k);
-					}
+					self::checkAttribute($fieldname, 'db', $k);
 				}
 				if ($rf->db_has_field == 'true') {
 					if ($rf->db_is_primary) {
@@ -736,6 +734,118 @@ abstract class ActiveRecord {
 		}
 
 		return true;
+	}
+
+
+	/**
+	 * @param ActiveRecord $obj
+	 * @param              $filter
+	 *
+	 * @return array
+	 */
+	protected static function getAttributesByFilter(ActiveRecord $obj, $filter) {
+		$reflectionClass = new ReflectionClass($obj);
+		$raw_fields = array();
+		foreach ($reflectionClass->getProperties() as $property) {
+			if ($property->getName() == 'fields') {
+				continue;
+			}
+			$properties = new stdClass();
+			foreach (explode("\n", $property->getDocComment()) as $line) {
+				if (preg_match("/[ ]*\\* @(" . $filter . "_[a-zA-Z0-9_]*)[ ]*([a-zA-Z0-9_]*)/u", $line, $matches)) {
+					$properties->{(string)$matches[1]} = $matches[2];
+				}
+			}
+			$raw_fields[$property->getName()] = $properties;
+		}
+
+		return $raw_fields;
+	}
+
+
+	/**
+	 * @param ActiveRecord $obj
+	 *
+	 * @return bool
+	 * @throws Exception
+	 */
+	private static function setFormFields(ActiveRecord $obj) {
+		$class = get_class($obj);
+		if (! self::$form_fields[$class]) {
+			$fields = array();
+			foreach (self::getAttributesByFilter($obj, 'form') as $fieldname => $rf) {
+				foreach ($rf as $k => $v) {
+					self::checkAttribute($fieldname, 'form', $k);
+					if ($rf->form_has_field == 'true') {
+						$field_info['type'] = $rf->form_type;
+						$fields[$fieldname] = $field_info;
+					}
+				}
+			}
+			self::$db_fields[$class] = $fields;
+		}
+
+		return true;
+	}
+
+
+	/**
+	 * @return array
+	 */
+	protected static function getPossibleFormAttributeNames() {
+		return self::$possible_fields['form'];
+	}
+
+
+	/**
+	 * @return array
+	 */
+	protected static function getPossibleDbAttributeNames() {
+		return self::$possible_fields['db'];
+	}
+
+
+	/**
+	 * @param $attribute_name
+	 *
+	 * @return bool
+	 */
+	protected static function isDbAttribute($attribute_name) {
+		return in_array($attribute_name, self::getPossibleDbAttributeNames());
+	}
+
+
+	/**
+	 * @param $attribute_name
+	 *
+	 * @return bool
+	 */
+	protected static function isFormAttribute($attribute_name) {
+		return in_array($attribute_name, self::getPossibleFormAttributeNames());
+	}
+
+
+	/**
+	 * @param $fieldname
+	 * @param $type
+	 * @param $attribute
+	 *
+	 * @throws Exception
+	 */
+	protected static function checkAttribute($fieldname, $type, $attribute) {
+		$is_attribute = true;
+		switch ($type) {
+			case 'db':
+				$is_attribute = self::isDbAttribute($attribute);
+				break;
+			case 'form':
+				$is_attribute = self::isFormAttribute($attribute);
+				break;
+		}
+		if (! $is_attribute) {
+			throw new Exception('Your field \'' . $fieldname . '\' in Class \'' . __CLASS__ . '\' has wrong attribute: '
+				. $attribute);
+		}
 	}
 }
 
