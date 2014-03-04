@@ -9,7 +9,7 @@ require_once('class.ActiveRecordList.php');
  *
  * @description
  *
- * @version 1.1.01
+ * @version 1.1.02
  */
 abstract class ActiveRecord {
 
@@ -95,6 +95,12 @@ abstract class ActiveRecord {
 
 
 	/**
+	 * @var ilDB
+	 */
+	protected $db;
+
+
+	/**
 	 * @var int
 	 *
 	 * @db_has_field        true
@@ -110,12 +116,10 @@ abstract class ActiveRecord {
 	 */
 	public function __construct($id = 0) {
 		global $ilDB;
+
 		$this->db = $ilDB;
 		self::setDBFields($this);
 		self::setFormFields($this);
-		/**
-		 * @var $ilDB ilDB
-		 */
 		if (self::returnPrimaryFieldName() === 'id') {
 			$this->id = $id;
 		} else {
@@ -132,12 +136,36 @@ abstract class ActiveRecord {
 	// Database
 	//
 	/**
+	 * @param $field_name
+	 *
+	 * @return mixed
+	 */
+	public function sleep($field_name) {
+		return NULL;
+	}
+
+
+	/**
+	 * @param $field_name
+	 *
+	 * @return mixed
+	 */
+	public function wakeUp($field_name) {
+		return NULL;
+	}
+
+
+	/**
 	 * @return array
 	 */
 	final protected function getArrayForDb() {
 		$e = array();
 		foreach (self::returnDbFields() as $field_name => $field_info) {
-			$e[$field_name] = array( $field_info->db_type, $this->$field_name );
+			if ($this->sleep($field_name) === NULL) {
+				$e[$field_name] = array( $field_info->db_type, $this->$field_name );
+			} else {
+				$e[$field_name] = array( $field_info->db_type, $this->sleep($field_name) );
+			}
 		}
 
 		return $e;
@@ -155,6 +183,74 @@ abstract class ActiveRecord {
 		$model = new $class();
 
 		return $model->installDatabase();
+	}
+
+
+	/**
+	 * @param $old_name
+	 * @param $new_name
+	 *
+	 * @return bool
+	 */
+	final public static function renameDBField($old_name, $new_name) {
+		$class = get_called_class();
+		/**
+		 * @var $model ActiveRecord
+		 */
+		$model = new $class();
+
+		return $model->renameField($old_name, $new_name);
+	}
+
+
+	/**
+	 * @param $old_name
+	 * @param $new_name
+	 *
+	 * @return bool
+	 */
+	final protected function renameField($old_name, $new_name) {
+		if (! $this->db->tableColumnExists($this->returnDbTableName(), $new_name)
+			AND $this->db->tableColumnExists($this->returnDbTableName(), $old_name)
+		) {
+			$this->db->renameTableColumn($this->returnDbTableName(), $old_name, $new_name);
+		}
+
+		return true;
+	}
+
+
+	/**
+	 * @param $field_name
+	 *
+	 * @return bool
+	 */
+	final public static function removeDBField($field_name) {
+		$copy_to_field = NULL;
+		$class = get_called_class();
+		/**
+		 * @var $model ActiveRecord
+		 */
+		$model = new $class();
+
+		return $model->removeField($field_name, $copy_to_field);
+	}
+
+
+	/**
+	 * @param      $field_name
+	 * @param null $copy_to_field
+	 *
+	 * @return bool
+	 */
+	final protected function removeField($field_name, $copy_to_field = NULL) {
+		if ($this->db->tableColumnExists($this->returnDbTableName(), $field_name)) {
+			$this->db->dropTableColumn($this->returnDbTableName(), $field_name);
+
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 
@@ -320,6 +416,10 @@ abstract class ActiveRecord {
 	}
 
 
+	public function afterObjectLoad() {
+	}
+
+
 	public function read() {
 		$class = get_class($this);
 		if (self::returnPrimaryFieldName() === 'id') {
@@ -327,9 +427,14 @@ abstract class ActiveRecord {
 				. $this->db->quote($this->getId(), 'integer'));
 			while ($rec = $this->db->fetchObject($set)) {
 				foreach ($this->getArrayForDb() as $k => $v) {
-					$this->{$k} = $rec->{$k};
+					if ($this->wakeUp($v) === NULL) {
+						$this->{$k} = $rec->{$k};
+					} else {
+						$this->{$k} = $this->wakeUp($v);
+					}
 				}
 			}
+			$this->afterObjectLoad();
 			self::$object_cache[$class][$this->getId()] = $this;
 		} else { // TODO dies zur normalen Methode machen. prüfen
 			$set = $this->db->query('SELECT * FROM ' . $this->returnDbTableName() . ' ' . ' WHERE '
@@ -340,29 +445,34 @@ abstract class ActiveRecord {
 					$this->{$k} = $rec->{$k};
 				}
 			}
+			$this->afterObjectLoad();
 			self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
 		}
 	}
 
 
 	public function update() {
-		$class = get_class($this);
-		if (self::returnPrimaryFieldName() === 'id') {
-			$this->db->update($this->returnDbTableName(), $this->getArrayForDb(), array(
-				'id' => array(
-					'integer',
-					$this->getId()
-				),
-			));
-			self::$object_cache[$class][$this->getId()] = $this;
-		} else { // TODO dies zur normalen Methode machen. prüfen
-			$this->db->update($this->returnDbTableName(), $this->getArrayForDb(), array(
-				self::returnPrimaryFieldName() => array(
-					self::returnPrimaryFieldType(),
-					$this->getPrimaryFieldValue()
-				),
-			));
-			self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
+		try {
+			$class = get_class($this);
+			if (self::returnPrimaryFieldName() === 'id') {
+				$this->db->update($this->returnDbTableName(), $this->getArrayForDb(), array(
+					'id' => array(
+						'integer',
+						$this->getId()
+					),
+				));
+				self::$object_cache[$class][$this->getId()] = $this;
+			} else { // TODO dies zur normalen Methode machen. prüfen
+				$this->db->update($this->returnDbTableName(), $this->getArrayForDb(), array(
+					self::returnPrimaryFieldName() => array(
+						self::returnPrimaryFieldType(),
+						$this->getPrimaryFieldValue()
+					),
+				));
+				self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
+			}
+		} catch (Exeption $e) {
+			echo $e->getCode();
 		}
 	}
 
@@ -565,6 +675,16 @@ abstract class ActiveRecord {
 
 
 	/**
+	 * @return ActiveRecordList
+	 */
+	public static function getCollection() {
+		$srModelObjectList = new ActiveRecordList(get_called_class());
+
+		return $srModelObjectList;
+	}
+
+
+	/**
 	 * @return mixed
 	 */
 	public static function last() {
@@ -620,7 +740,11 @@ abstract class ActiveRecord {
 				return self::$object_cache[$class][$array['id']];
 			}
 			foreach ($array as $field_name => $value) {
-				$this->{$field_name} = $value;
+				if ($this->wakeUp($value) === NULL) {
+					$this->{$field_name} = $value;
+				} else {
+					$this->{$field_name} = $this->wakeUp($value);
+				}
 			}
 			self::$object_cache[$class][$array['id']] = $this;
 		} else {
@@ -628,10 +752,15 @@ abstract class ActiveRecord {
 				return self::$object_cache[$class][$array[self::returnPrimaryFieldName()]];
 			}
 			foreach ($array as $field_name => $value) {
-				$this->{$field_name} = $value;
+				if ($this->wakeUp($value) === NULL) {
+					$this->{$field_name} = $value;
+				} else {
+					$this->{$field_name} = $this->wakeUp($value);
+				}
 			}
 			self::$object_cache[$class][$array[self::returnPrimaryFieldName()]] = $this;
 		}
+		$this->afterObjectLoad();
 
 		return $this;
 	}
@@ -672,7 +801,6 @@ abstract class ActiveRecord {
 	 * @throws Exception
 	 */
 	private static function setDBFields(ActiveRecord $obj) {
-
 		$class = get_class($obj);
 		if (! self::$db_fields[$class]) {
 			$fields = array();
@@ -751,12 +879,16 @@ abstract class ActiveRecord {
 				continue;
 			}
 			$properties = new stdClass();
+			$has_property = false;
 			foreach (explode("\n", $property->getDocComment()) as $line) {
 				if (preg_match("/[ ]*\\* @(" . $filter . "_[a-zA-Z0-9_]*)[ ]*([a-zA-Z0-9_]*)/u", $line, $matches)) {
+					$has_property = true;
 					$properties->{(string)$matches[1]} = $matches[2];
 				}
 			}
-			$raw_fields[$property->getName()] = $properties;
+			if ($has_property) {
+				$raw_fields[$property->getName()] = $properties;
+			}
 		}
 
 		return $raw_fields;
@@ -782,7 +914,7 @@ abstract class ActiveRecord {
 					}
 				}
 			}
-			self::$db_fields[$class] = $fields;
+			self::$form_fields[$class] = $fields;
 		}
 
 		return true;

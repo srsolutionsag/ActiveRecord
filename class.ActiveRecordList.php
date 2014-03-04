@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class ActiveRecordList
  *
@@ -164,6 +165,14 @@ class ActiveRecordList {
 
 
 	/**
+	 * @return $this
+	 */
+	public function getCollection() {
+		return $this;
+	}
+
+
+	/**
 	 * @return bool
 	 */
 	public function hasSets() {
@@ -182,7 +191,7 @@ class ActiveRecordList {
 
 
 	/**
-	 * @return array
+	 * @return ActiveRecord
 	 */
 	public function getFirstFromLastQuery() {
 		$this->loadLastQuery();
@@ -192,7 +201,7 @@ class ActiveRecordList {
 
 
 	/**
-	 * @return mixed
+	 * @return ActiveRecord
 	 */
 	public function first() {
 		$this->load();
@@ -202,7 +211,7 @@ class ActiveRecordList {
 
 
 	/**
-	 * @return mixed
+	 * @return ActiveRecord
 	 */
 	public function last() {
 		$this->load();
