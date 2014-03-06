@@ -261,7 +261,7 @@ abstract class ActiveRecord {
 	 */
 	final protected function installDatabase() {
 		$fields = array();
-		foreach (self::returnDbFields() as $field_name => $field_infos) {
+		foreach ($this::returnDbFields() as $field_name => $field_infos) {
 			$attributes = array();
 			$attributes['type'] = $field_infos->db_type;
 			if ($field_infos->length) {
@@ -272,12 +272,12 @@ abstract class ActiveRecord {
 			}
 			$fields[$field_name] = $attributes;
 		}
-		if (! $this->db->tableExists($this->returnDbTableName())) {
-			$this->db->createTable($this->returnDbTableName(), $fields);
-			if (self::returnPrimaryFieldName()) {
-				$this->db->addPrimaryKey($this->returnDbTableName(), array( self::returnPrimaryFieldName() ));
+		if (! $this->db->tableExists($this::returnDbTableName())) {
+			$this->db->createTable($this::returnDbTableName(), $fields);
+			if ($this::returnPrimaryFieldName()) {
+				$this->db->addPrimaryKey($this::returnDbTableName(), array( $this::returnPrimaryFieldName() ));
 			}
-			if (self::returnPrimaryFieldType() === 'integer') {
+			if ($this::returnPrimaryFieldType() === 'integer') {
 				$this->db->createSequence($this->returnDbTableName());
 			}
 		} else {
@@ -311,7 +311,7 @@ abstract class ActiveRecord {
 
 			return true;
 		}
-		foreach (self::returnDbFields() as $field_name => $field_infos) {
+		foreach ($this::returnDbFields() as $field_name => $field_infos) {
 			if (! $this->db->tableColumnExists($this->returnDbTableName(), $field_name)) {
 				$attributes = array();
 				$attributes['type'] = $field_infos->db_type;
