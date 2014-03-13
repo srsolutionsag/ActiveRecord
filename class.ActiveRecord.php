@@ -126,7 +126,7 @@ abstract class ActiveRecord {
 			$key = self::returnPrimaryFieldName();
 			$this->{$key} = $id;
 		}
-		if ($id != 0) {
+		if ($id !== 0) {
 			$this->read();
 		}
 	}
