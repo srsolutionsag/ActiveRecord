@@ -126,7 +126,7 @@ abstract class ActiveRecord {
 			$key = self::returnPrimaryFieldName();
 			$this->{$key} = $id;
 		}
-		if ($id !== 0) {
+		if ($id !== 0 AND $id !== NULL) {
 			$this->read();
 		}
 	}
@@ -136,7 +136,6 @@ abstract class ActiveRecord {
 	// Database
 	//
 	/**
-     * Convert value of a field before saving to DB, e.g. convert php array to JSON
 	 * @param $field_name
 	 *
 	 * @return mixed
@@ -146,12 +145,11 @@ abstract class ActiveRecord {
 	}
 
 
-    /**
-     * Initialize raw value from DB before setting in model, e.g. convert JSON to php array
-     * @param $field_name
-     *
-     * @return mixed
-     */
+	/**
+	 * @param $field_name
+	 *
+	 * @return mixed
+	 */
 	public function wakeUp($field_name) {
 		return NULL;
 	}
@@ -261,7 +259,7 @@ abstract class ActiveRecord {
 	 */
 	final protected function installDatabase() {
 		$fields = array();
-		foreach ($this::returnDbFields() as $field_name => $field_infos) {
+		foreach (self::returnDbFields() as $field_name => $field_infos) {
 			$attributes = array();
 			$attributes['type'] = $field_infos->db_type;
 			if ($field_infos->length) {
@@ -272,12 +270,12 @@ abstract class ActiveRecord {
 			}
 			$fields[$field_name] = $attributes;
 		}
-		if (! $this->db->tableExists($this::returnDbTableName())) {
-			$this->db->createTable($this::returnDbTableName(), $fields);
-			if ($this::returnPrimaryFieldName()) {
-				$this->db->addPrimaryKey($this::returnDbTableName(), array( $this::returnPrimaryFieldName() ));
+		if (! $this->db->tableExists($this->returnDbTableName())) {
+			$this->db->createTable($this->returnDbTableName(), $fields);
+			if (self::returnPrimaryFieldName()) {
+				$this->db->addPrimaryKey($this->returnDbTableName(), array( self::returnPrimaryFieldName() ));
 			}
-			if ($this::returnPrimaryFieldType() === 'integer') {
+			if (self::returnPrimaryFieldType() === 'integer') {
 				$this->db->createSequence($this->returnDbTableName());
 			}
 		} else {
@@ -311,7 +309,7 @@ abstract class ActiveRecord {
 
 			return true;
 		}
-		foreach ($this::returnDbFields() as $field_name => $field_infos) {
+		foreach (self::returnDbFields() as $field_name => $field_infos) {
 			if (! $this->db->tableColumnExists($this->returnDbTableName(), $field_name)) {
 				$attributes = array();
 				$attributes['type'] = $field_infos->db_type;
@@ -429,9 +427,11 @@ abstract class ActiveRecord {
 				. $this->db->quote($this->getId(), 'integer'));
 			while ($rec = $this->db->fetchObject($set)) {
 				foreach ($this->getArrayForDb() as $k => $v) {
-					$this->{$k} = $rec->{$k};
-                    if ($this->wakeUp($k) !== NULL)
-                        $this->{$k} = $this->wakeUp($k);
+					if ($this->wakeUp($v) === NULL) {
+						$this->{$k} = $rec->{$k};
+					} else {
+						$this->{$k} = $this->wakeUp($v);
+					}
 				}
 			}
 			$this->afterObjectLoad();
@@ -740,9 +740,11 @@ abstract class ActiveRecord {
 				return self::$object_cache[$class][$array['id']];
 			}
 			foreach ($array as $field_name => $value) {
-                $this->{$field_name} = $value;
-                if ($this->wakeUp($field_name) !== NULL)
-                    $this->{$field_name} = $this->wakeUp($field_name);
+				if ($this->wakeUp($value) === NULL) {
+					$this->{$field_name} = $value;
+				} else {
+					$this->{$field_name} = $this->wakeUp($value);
+				}
 			}
 			self::$object_cache[$class][$array['id']] = $this;
 		} else {
@@ -750,9 +752,11 @@ abstract class ActiveRecord {
 				return self::$object_cache[$class][$array[self::returnPrimaryFieldName()]];
 			}
 			foreach ($array as $field_name => $value) {
-                $this->{$field_name} = $value;
-                if ($this->wakeUp($field_name) !== NULL)
-                    $this->{$field_name} = $this->wakeUp($field_name);
+				if ($this->wakeUp($value) === NULL) {
+					$this->{$field_name} = $value;
+				} else {
+					$this->{$field_name} = $this->wakeUp($value);
+				}
 			}
 			self::$object_cache[$class][$array[self::returnPrimaryFieldName()]] = $this;
 		}
