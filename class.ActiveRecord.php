@@ -427,11 +427,10 @@ abstract class ActiveRecord {
 				. $this->db->quote($this->getId(), 'integer'));
 			while ($rec = $this->db->fetchObject($set)) {
 				foreach ($this->getArrayForDb() as $k => $v) {
-					if ($this->wakeUp($v) === NULL) {
-						$this->{$k} = $rec->{$k};
-					} else {
-						$this->{$k} = $this->wakeUp($v);
-					}
+                    $this->{$k} = $rec->{$k};
+                    if ($this->wakeUp($k) !== NULL) {
+                        $this->{$k} = $this->wakeUp($k);
+                    }
 				}
 			}
 			$this->afterObjectLoad();
@@ -740,11 +739,10 @@ abstract class ActiveRecord {
 				return self::$object_cache[$class][$array['id']];
 			}
 			foreach ($array as $field_name => $value) {
-				if ($this->wakeUp($value) === NULL) {
-					$this->{$field_name} = $value;
-				} else {
-					$this->{$field_name} = $this->wakeUp($value);
-				}
+                $this->{$field_name} = $value;
+                if ($this->wakeUp($field_name) !== NULL) {
+                    $this->{$field_name} = $this->wakeUp($field_name);
+                }
 			}
 			self::$object_cache[$class][$array['id']] = $this;
 		} else {
@@ -752,11 +750,10 @@ abstract class ActiveRecord {
 				return self::$object_cache[$class][$array[self::returnPrimaryFieldName()]];
 			}
 			foreach ($array as $field_name => $value) {
-				if ($this->wakeUp($value) === NULL) {
-					$this->{$field_name} = $value;
-				} else {
-					$this->{$field_name} = $this->wakeUp($value);
-				}
+                $this->{$field_name} = $value;
+                if ($this->wakeUp($field_name) !== NULL) {
+                    $this->{$field_name} = $this->wakeUp($field_name);
+                }
 			}
 			self::$object_cache[$class][$array[self::returnPrimaryFieldName()]] = $this;
 		}
