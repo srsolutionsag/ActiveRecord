@@ -434,8 +434,7 @@ abstract class ActiveRecord {
 				}
 			}
 			$this->afterObjectLoad();
-			self::$object_cache[$class][$this->getId()] = $this;
-		} else { // TODO dies zur normalen Methode machen. prüfen
+		} else {
 			$set = $this->db->query('SELECT * FROM ' . $this->returnDbTableName() . ' ' . ' WHERE '
 				. self::returnPrimaryFieldName() . ' = '
 				. $this->db->quote($this->getPrimaryFieldValue(), self::returnPrimaryFieldType()));
@@ -445,8 +444,8 @@ abstract class ActiveRecord {
 				}
 			}
 			$this->afterObjectLoad();
-			self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
 		}
+		self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
 	}
 
 
@@ -695,8 +694,9 @@ abstract class ActiveRecord {
 
 	/**
 	 * @return mixed
+	 * FSX TODO funktioniert aktuell nicht
 	 */
-	public static function getFirstFromLastQuery() {
+	private static function getFirstFromLastQuery() {
 		$srModelObjectList = new ActiveRecordList(get_called_class());
 
 		return $srModelObjectList->getFirstFromLastQuery();
