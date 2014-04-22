@@ -17,6 +17,10 @@ class ActiveRecordList {
 	 */
 	protected $where = array();
 	/**
+	 * @var array
+	 */
+	protected $joins = array();
+	/**
 	 * @var bool
 	 */
 	protected $loaded = false;
@@ -60,18 +64,21 @@ class ActiveRecordList {
 	 * @var string
 	 */
 	protected static $last_query;
+	/**
+	 * @var arConnector
+	 */
+	protected $connector;
 
 
 	/**
-	 * @param $class
+	 * @param             $class
+	 * @param arConnector $connector
 	 */
-	public function __construct($class) {
-		global $ilDB;
-		/**
-		 * @var $ilDB ilDB
-		 */
-		$this->db = $ilDB;
+	public function __construct($class, arConnector $connector = NULL) {
 		$this->class = $class;
+		if ($connector == NULL) {
+			$this->connector = new arConnectorDB($this);
+		}
 	}
 
 
@@ -146,13 +153,90 @@ class ActiveRecordList {
 
 
 	/**
+	 * @return array
+	 */
+	public function getWhere() {
+		return $this->where;
+	}
+
+
+	/**
+	 * @return array
+	 */
+	public function getJoins() {
+		return $this->joins;
+	}
+
+
+	/**
+	 * @return array
+	 */
+	public function getStringWheres() {
+		return $this->string_wheres;
+	}
+
+
+	/**
+	 * @return boolean
+	 */
+	public function getDebug() {
+		return $this->debug;
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getOrderBy() {
+		return $this->order_by;
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getOrderDirection() {
+		return $this->order_direction;
+	}
+
+
+	/**
+	 * @return mixed
+	 */
+	public function getStart() {
+		return $this->start;
+	}
+
+
+	/**
+	 * @return mixed
+	 */
+	public function getEnd() {
+		return $this->end;
+	}
+
+
+	/**
+	 * @param string $last_query
+	 */
+	public static function setLastQuery($last_query) {
+		self::$last_query = $last_query;
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public static function getLastQuery() {
+		return self::$last_query;
+	}
+
+
+	/**
 	 * @return int
 	 */
 	public function affectedRows() {
-		$q = $this->buildQuery();
-		$set = $this->db->query($q);
-
-		return $this->db->numRows($set);
+		return $this->connector->affectedRows($this);
 	}
 
 
@@ -173,10 +257,26 @@ class ActiveRecordList {
 
 
 	/**
+	 * @param string $class
+	 */
+	public function setClass($class) {
+		$this->class = $class;
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getClass() {
+		return $this->class;
+	}
+
+
+	/**
 	 * @return bool
 	 */
 	public function hasSets() {
-		return $this->affectedRows() > 0 ? true : false;
+		return ($this->affectedRows() > 0) ? true : false;
 	}
 
 
@@ -217,6 +317,19 @@ class ActiveRecordList {
 		$this->load();
 
 		return array_pop(array_values($this->result));
+	}
+
+
+	/**
+	 * @param ActiveRecord $ar
+	 * @param array        $on
+	 *
+	 * @return $this
+	 */
+	public function join(ActiveRecord $ar, $on = array()) {
+		$this->joins[$ar::returnDbTableName()] = $on;
+
+		return $this;
 	}
 
 
@@ -289,92 +402,27 @@ class ActiveRecordList {
 		if ($this->loaded) {
 			return;
 		} else {
-			$this->readFromDb($this->buildQuery());
+			$records = $this->connector->readSet($this);
+			foreach ($records as $res) {
+				/**
+				 * @var $obj ActiveRecord
+				 */
+				$obj = new $this->class();
+				if ($obj::returnPrimaryFieldName() === 'id') {
+					$this->result[$res['id']] = $obj->buildFromArray($res);
+					$this->result_array[$res['id']] = $res;
+				} else {
+					$this->result[$res[$obj::returnPrimaryFieldName()]] = $obj->buildFromArray($res);
+					$this->result_array[$res[$obj::returnPrimaryFieldName()]] = $res;
+				}
+			}
+			$this->loaded = true;
 		}
 	}
 
 
 	private function loadLastQuery() {
 		$this->readFromDb(self::$last_query);
-	}
-
-
-	/**
-	 * @param $q
-	 */
-	private function readFromDb($q) {
-		$set = $this->db->query($q);
-		$this->result = array();
-		$this->result_array = array();
-		while ($res = $this->db->fetchAssoc($set)) {
-			/**
-			 * @var $obj ActiveRecord
-			 */
-			$obj = new $this->class();
-			if ($obj::returnPrimaryFieldName() === 'id') {
-				$this->result[$res['id']] = $obj->buildFromArray($res);
-				$this->result_array[$res['id']] = $res;
-			} else {
-				$this->result[$res[$obj::returnPrimaryFieldName()]] = $obj->buildFromArray($res);
-				$this->result_array[$res[$obj::returnPrimaryFieldName()]] = $res;
-			}
-		}
-		$this->loaded = true;
-	}
-
-
-	/**
-	 * @return string
-	 */
-	private function buildQuery() {
-		$class_fields = call_user_func($this->class . '::returnDbFields');
-		$table_name = call_user_func($this->class . '::returnDbTableName');
-		$q = 'SELECT * FROM ' . $table_name;
-		if (count($this->where) OR count($this->string_wheres)) {
-			$q .= ' WHERE ';
-		}
-		foreach ($this->string_wheres as $str) {
-			$q .= $str . ' AND ';
-		}
-		foreach ($this->where as $w) {
-			$field = $w['fieldname'];
-			$value = $w['value'];
-			$operator = ' ' . $w['operator'] . ' ';
-			if (is_array($value)) {
-				$q .= $this->db->in($field, $value, false, $class_fields[$field]->db_type) . ' AND ';
-			} else {
-				switch ($class_fields[$field]->db_type) {
-					case 'integer':
-					case 'float':
-					case 'timestamp':
-					case 'time':
-					case 'date':
-						$q .= $field . $operator . $this->db->quote($value, $class_fields[$field]->db_type) . ' AND ';
-						break;
-					case 'text':
-					case 'clob':
-					default:
-						$q .= $field . $operator . $this->db->quote($value, $class_fields[$field]->db_type) . ' AND ';
-						break;
-				}
-			}
-		}
-		$q = str_ireplace('  ', ' ', $q);
-		if (count($this->where) OR count($this->string_wheres)) {
-			$q = substr($q, 0, - 4);
-		}
-		if ($this->order_by) {
-			$q .= ' ORDER BY ' . $this->order_by . ' ' . $this->order_direction;
-		}
-		if ($this->start !== NULL AND $this->end !== NULL) {
-			$q .= ' LIMIT ' . $this->start . ', ' . $this->end;
-		}
-		if ($this->debug) {
-			var_dump($q); // FSX
-		}
-		self::$last_query = $q;
-
-		return $q;
 	}
 }
 

@@ -1,15 +1,17 @@
 <?php
 require_once('class.ActiveRecordList.php');
+require_once('Connector/class.arConnector.php');
+require_once('Connector/class.arConnectorDB.php');
 
 /**
  * Class ActiveRecord
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
  * @author  Oskar Truffer <ot@studer-raimann.ch>
- *
+ * @experimental
  * @description
  *
- * @version 1.1.02
+ * @version 1.1.04
  */
 abstract class ActiveRecord {
 
@@ -46,6 +48,10 @@ abstract class ActiveRecord {
 			'form_type',
 		),
 	);
+	/**
+	 * @var arConnector
+	 */
+	protected $connector;
 
 
 	/**
@@ -95,12 +101,6 @@ abstract class ActiveRecord {
 
 
 	/**
-	 * @var ilDB
-	 */
-	protected $db;
-
-
-	/**
 	 * @var int
 	 *
 	 * @db_has_field        true
@@ -112,23 +112,37 @@ abstract class ActiveRecord {
 	 */
 	// protected $id = 0;
 	/**
-	 * @param $id
+	 * @param int         $id
+	 * @param arConnector $connector
 	 */
-	public function __construct($id = 0) {
-		global $ilDB;
-
-		$this->db = $ilDB;
+	public function __construct($id = 0, arConnector $connector = NULL) {
+		if ($connector == NULL) {
+			$this->connector = new arConnectorDB();
+		}
 		self::setDBFields($this);
-		self::setFormFields($this);
+		//		self::setFormFields($this);
 		if (self::returnPrimaryFieldName() === 'id') {
 			$this->id = $id;
 		} else {
 			$key = self::returnPrimaryFieldName();
 			$this->{$key} = $id;
 		}
-		if ($id !== 0 AND $id !== NULL) {
+		if ($id !== 0 AND $id !== NULL AND $id !== false) {
 			$this->read();
 		}
+	}
+
+
+	/**
+	 * @return array
+	 */
+	public function __asArray() {
+		$return = array();
+		foreach (array_keys(self::returnDbFields()) as $fieldname) {
+			$return[$fieldname] = $this->{$fieldname};
+		}
+
+		return $return;
 	}
 
 
@@ -147,10 +161,11 @@ abstract class ActiveRecord {
 
 	/**
 	 * @param $field_name
+	 * @param $field_value
 	 *
 	 * @return mixed
 	 */
-	public function wakeUp($field_name) {
+	public function wakeUp($field_name, $field_value) {
 		return NULL;
 	}
 
@@ -158,17 +173,34 @@ abstract class ActiveRecord {
 	/**
 	 * @return array
 	 */
-	final protected function getArrayForDb() {
-		$e = array();
+	final public function getArrayForDb() {
+		$data = array();
 		foreach (self::returnDbFields() as $field_name => $field_info) {
 			if ($this->sleep($field_name) === NULL) {
-				$e[$field_name] = array( $field_info->db_type, $this->$field_name );
+				$data[$field_name] = array( $field_info->db_type, $this->$field_name );
 			} else {
-				$e[$field_name] = array( $field_info->db_type, $this->sleep($field_name) );
+				$data[$field_name] = array( $field_info->db_type, $this->sleep($field_name) );
 			}
 		}
 
-		return $e;
+		return $data;
+	}
+
+
+	/**
+	 * @return ActiveRecord
+	 *
+	 * @description Returns an instance of the instatiated calling active record (needs to be done in static methods)
+	 * @TODO        : This should be cached somehow
+	 */
+	static protected function getCalledClass() {
+		$class = get_called_class();
+
+		/**
+		 * @var $model ActiveRecord
+		 */
+
+		return new $class();
 	}
 
 
@@ -176,13 +208,7 @@ abstract class ActiveRecord {
 	 * @return bool
 	 */
 	final public static function installDB() {
-		$class = get_called_class();
-		/**
-		 * @var $model ActiveRecord
-		 */
-		$model = new $class();
-
-		return $model->installDatabase();
+		return self::getCalledClass()->installDatabase();
 	}
 
 
@@ -193,30 +219,25 @@ abstract class ActiveRecord {
 	 * @return bool
 	 */
 	final public static function renameDBField($old_name, $new_name) {
-		$class = get_called_class();
-		/**
-		 * @var $model ActiveRecord
-		 */
-		$model = new $class();
-
-		return $model->renameField($old_name, $new_name);
+		return self::getCalledClass()->connector->renameField(self::getCalledClass(), $old_name, $new_name);
 	}
 
 
 	/**
-	 * @param $old_name
-	 * @param $new_name
+	 * @return bool
+	 */
+	final public static function tableExists() {
+		return self::getCalledClass()->connector->checkTableExists(self::getCalledClass());
+	}
+
+
+	/**
+	 * @param $field_name
 	 *
 	 * @return bool
 	 */
-	final protected function renameField($old_name, $new_name) {
-		if (! $this->db->tableColumnExists($this->returnDbTableName(), $new_name)
-			AND $this->db->tableColumnExists($this->returnDbTableName(), $old_name)
-		) {
-			$this->db->renameTableColumn($this->returnDbTableName(), $old_name, $new_name);
-		}
-
-		return true;
+	final public static function fieldExists($field_name) {
+		return self::getCalledClass()->connector->checkFieldExists(self::getCalledClass(), $field_name);
 	}
 
 
@@ -226,31 +247,7 @@ abstract class ActiveRecord {
 	 * @return bool
 	 */
 	final public static function removeDBField($field_name) {
-		$copy_to_field = NULL;
-		$class = get_called_class();
-		/**
-		 * @var $model ActiveRecord
-		 */
-		$model = new $class();
-
-		return $model->removeField($field_name, $copy_to_field);
-	}
-
-
-	/**
-	 * @param      $field_name
-	 * @param null $copy_to_field
-	 *
-	 * @return bool
-	 */
-	final protected function removeField($field_name, $copy_to_field = NULL) {
-		if ($this->db->tableColumnExists($this->returnDbTableName(), $field_name)) {
-			$this->db->dropTableColumn($this->returnDbTableName(), $field_name);
-
-			return true;
-		} else {
-			return false;
-		}
+		return self::getCalledClass()->connector->removeField(self::getCalledClass(), $field_name);
 	}
 
 
@@ -258,31 +255,16 @@ abstract class ActiveRecord {
 	 * @return bool
 	 */
 	final protected function installDatabase() {
-		$fields = array();
-		foreach (self::returnDbFields() as $field_name => $field_infos) {
-			$attributes = array();
-			$attributes['type'] = $field_infos->db_type;
-			if ($field_infos->length) {
-				$attributes['length'] = $field_infos->length;
+		if (! $this->tableExists()) {
+			$fields = array();
+			foreach (self::returnDbFields() as $field_name => $field_infos) {
+				$fields[$field_name] = $this->getDBAttributesOfField($field_infos);
 			}
-			if ($field_infos->notnull) {
-				$attributes['notnull'] = $field_infos->notnull;
-			}
-			$fields[$field_name] = $attributes;
-		}
-		if (! $this->db->tableExists($this->returnDbTableName())) {
-			$this->db->createTable($this->returnDbTableName(), $fields);
-			if (self::returnPrimaryFieldName()) {
-				$this->db->addPrimaryKey($this->returnDbTableName(), array( self::returnPrimaryFieldName() ));
-			}
-			if (self::returnPrimaryFieldType() === 'integer') {
-				$this->db->createSequence($this->returnDbTableName());
-			}
-		} else {
-			$this->updateDB();
-		}
 
-		return true;
+			return $this->connector->installDatabase($this, $fields);
+		} else {
+			return $this->connector->updateDatabase($this);
+		}
 	}
 
 
@@ -290,40 +272,32 @@ abstract class ActiveRecord {
 	 * @return bool
 	 */
 	final public static function updateDB() {
-		$class = get_called_class();
-		/**
-		 * @var $model ActiveRecord
-		 */
-		$model = new $class();
+		if (! self::tableExists()) {
+			self::getCalledClass()->installDatabase();
 
-		return $model->updateDatabase();
+			return true;
+		}
+
+		return self::getCalledClass()->connector->updateDatabase(self::getCalledClass());
 	}
 
 
 	/**
-	 * @return bool
+	 * @param $field
+	 *
+	 * @return array
 	 */
-	final protected function updateDatabase() {
-		if (! $this->db->tableExists($this->returnDbTableName())) {
-			$this->installDatabase();
-
-			return true;
+	public function getDBAttributesOfField($field) {
+		$attributes = array();
+		$attributes['type'] = $field->db_type;
+		if ($field->length) {
+			$attributes['length'] = $field->length;
 		}
-		foreach (self::returnDbFields() as $field_name => $field_infos) {
-			if (! $this->db->tableColumnExists($this->returnDbTableName(), $field_name)) {
-				$attributes = array();
-				$attributes['type'] = $field_infos->db_type;
-				if ($field_infos->length) {
-					$attributes['length'] = $field_infos->length;
-				}
-				if ($field_infos->notnull) {
-					$attributes['notnull'] = $field_infos->notnull;
-				}
-				$this->db->addTableColumn($this->returnDbTableName(), $field_name, $attributes);
-			}
+		if ($field->notnull) {
+			$attributes['notnull'] = $field->notnull;
 		}
 
-		return true;
+		return $attributes;
 	}
 
 
@@ -331,36 +305,7 @@ abstract class ActiveRecord {
 	 * @return bool
 	 */
 	final public static function resetDB() {
-		$class = get_called_class();
-		/**
-		 * @var $model ActiveRecord
-		 */
-		$model = new $class();
-
-		return $model->resetDatabase();
-	}
-
-
-	/**
-	 * @return bool
-	 */
-	final protected function resetDatabase() {
-		if ($this->db->tableExists($this->returnDbTableName())) {
-			$this->db->dropTable($this->returnDbTableName());
-		}
-		$this->installDatabase();
-
-		return true;
-	}
-
-
-	final  protected function truncateDatabase() {
-		$query = 'TRUNCATE TABLE ' . $this->returnDbTableName();
-		$this->db->query($query);
-		if ($this->db->tableExists($this->returnDbTableName() . '_seq')) {
-			$this->db->dropSequence($this->returnDbTableName());
-			$this->db->createSequence($this->returnDbFields());
-		}
+		return self::getCalledClass()->connector->resetDatabase(self::getCalledClass());
 	}
 
 
@@ -368,13 +313,7 @@ abstract class ActiveRecord {
 	 * @return bool
 	 */
 	final public static function truncateDB() {
-		$class = get_called_class();
-		/**
-		 * @var $model ActiveRecord
-		 */
-		$model = new $class();
-
-		return $model->truncateDatabase();
+		return self::getCalledClass()->connector->truncateDatabase(self::getCalledClass());
 	}
 
 
@@ -384,7 +323,6 @@ abstract class ActiveRecord {
 	final public static function flushDB() {
 		return self::truncateDB();
 	}
-
 
 	//
 	// CRUD
@@ -403,13 +341,10 @@ abstract class ActiveRecord {
 		// TODO evtl. check field length etc.
 		try {
 			if (self::returnPrimaryFieldName() === 'id') {
-				$this->setId($this->db->nextID($this->returnDbTableName()));
-				$this->db->insert($this->returnDbTableName(), $this->getArrayForDb());
+				$this->setId($this->connector->nextID($this));
 				self::$object_cache[$class][$this->getId()] = $this;
-			} else { // TODO dies zur normalen Methode machen. prüfen
-				$this->db->insert($this->returnDbTableName(), $this->getArrayForDb());
-				self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
 			}
+			$this->connector->create($this, $this->getArrayForDb());
 		} catch (Exception $e) {
 			echo $e->getMessage();
 		}
@@ -422,104 +357,31 @@ abstract class ActiveRecord {
 
 	public function read() {
 		$class = get_class($this);
-		if (self::returnPrimaryFieldName() === 'id') {
-			$set = $this->db->query('SELECT * FROM ' . $this->returnDbTableName() . ' ' . ' WHERE id = '
-				. $this->db->quote($this->getId(), 'integer'));
-			while ($rec = $this->db->fetchObject($set)) {
-				foreach ($this->getArrayForDb() as $k => $v) {
-                    $this->{$k} = $rec->{$k};
-                    if ($this->wakeUp($k) !== NULL) {
-                        $this->{$k} = $this->wakeUp($k);
-                    }
-				}
-			}
-			$this->afterObjectLoad();
-		} else {
-			$set = $this->db->query('SELECT * FROM ' . $this->returnDbTableName() . ' ' . ' WHERE '
-				. self::returnPrimaryFieldName() . ' = '
-				. $this->db->quote($this->getPrimaryFieldValue(), self::returnPrimaryFieldType()));
-			while ($rec = $this->db->fetchObject($set)) {
-				foreach ($this->getArrayForDb() as $k => $v) {
+		foreach ($this->connector->read($this) as $rec) {
+			foreach ($this->getArrayForDb() as $k => $v) {
+				if ($this->wakeUp($k, $rec->{$k}) === NULL) {
 					$this->{$k} = $rec->{$k};
+				} else {
+					$this->{$k} = $this->wakeUp($k, $rec->{$k});
 				}
 			}
 			$this->afterObjectLoad();
+			self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
 		}
-		self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
 	}
 
 
 	public function update() {
-		try {
-			$class = get_class($this);
-			if (self::returnPrimaryFieldName() === 'id') {
-				$this->db->update($this->returnDbTableName(), $this->getArrayForDb(), array(
-					'id' => array(
-						'integer',
-						$this->getId()
-					),
-				));
-				self::$object_cache[$class][$this->getId()] = $this;
-			} else { // TODO dies zur normalen Methode machen. prüfen
-				$this->db->update($this->returnDbTableName(), $this->getArrayForDb(), array(
-					self::returnPrimaryFieldName() => array(
-						self::returnPrimaryFieldType(),
-						$this->getPrimaryFieldValue()
-					),
-				));
-				self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
-			}
-		} catch (Exeption $e) {
-			echo $e->getCode();
-		}
+		$class = get_class($this);
+		$this->connector->update($this);
+		self::$object_cache[$class][$this->getPrimaryFieldValue()] = $this;
 	}
 
 
 	public function delete() {
 		$class = get_class($this);
-		if (self::returnPrimaryFieldName() === 'id') {
-			$this->db->manipulate('DELETE FROM ' . $this->returnDbTableName() . ' WHERE id = '
-				. $this->db->quote($this->getId(), 'integer'));
-			unset(self::$object_cache[$class][$this->getId()]);
-		} else { // TODO dies zur normalen Methode machen. prüfen
-			$this->db->manipulate('DELETE FROM ' . $this->returnDbTableName() . ' WHERE '
-				. self::returnPrimaryFieldName() . ' = '
-				. $this->db->quote($this->getPrimaryFieldValue(), self::returnPrimaryFieldType()));
-			unset(self::$object_cache[$class][$this->getPrimaryFieldValue()]);
-		}
-	}
-
-
-	//
-	// Helper
-	//
-	/**
-	 * @param $parent_id
-	 *
-	 * @return int
-	 * @deprecated
-	 */
-	private function getNextPosition($parent_id) {
-		$set = $this->db->query('SELECT MAX(position) next_pos FROM ' . $this->returnDbTableName() . ' '
-			. ' WHERE parent_id = ' . $this->db->quote($parent_id, 'integer'));
-		while ($rec = $this->db->fetchObject($set)) {
-			return $rec->next_pos + 1;
-		}
-
-		return 1;
-	}
-
-
-	/**
-	 * @param string $str
-	 *
-	 * @return string
-	 */
-	private static function _fromCamelCase($str) {
-		$str[0] = strtolower($str[0]);
-		$func = create_function('$c', 'return "_" . strtolower($c[1]);');
-
-		return preg_replace_callback('/([A-Z])/', $func, $str);
+		$this->connector->delete($this);
+		unset(self::$object_cache[$class][$this->getPrimaryFieldValue()]);
 	}
 
 
@@ -529,19 +391,16 @@ abstract class ActiveRecord {
 	 *
 	 * @return string
 	 */
-	private static function _toCamelCase($str, $capitalise_first_char = false) {
+	public static function _toCamelCase($str, $capitalise_first_char = false) {
 		if ($capitalise_first_char) {
 			$str[0] = strtoupper($str[0]);
 		}
 		$func = create_function('$c', 'return strtoupper($c[1]);');
 
-		return preg_replace_callback('/-([a-z])/', $func, $str);
+		return preg_replace_callback('/_([a-z])/', $func, $str);
 	}
 
 
-	//
-	// FindBy
-	//
 	/**
 	 * @param $name
 	 * @param $arguments
@@ -551,14 +410,14 @@ abstract class ActiveRecord {
 	public function __call($name, $arguments) {
 		// Getter
 		if (preg_match("/get([a-zA-Z]*)/u", $name, $matches) AND count($arguments) == 0) {
-			return $this->{self::_fromCamelCase($matches[1])};
+			return $this->{self::fromCamelCase($matches[1])};
 		}
 		// Setter
 		if (preg_match("/set([a-zA-Z]*)/u", $name, $matches) AND count($arguments) == 1) {
-			$this->{self::_fromCamelCase($matches[1])} = $arguments[0];
+			$this->{self::fromCamelCase($matches[1])} = $arguments[0];
 		}
 		if (preg_match("/findBy([a-zA-Z]*)/u", $name, $matches) AND count($arguments) == 1) {
-			return self::where(array( self::_fromCamelCase($matches[1]) => $arguments[0] ))->get();
+			return self::where(array( self::fromCamelCase($matches[1]) => $arguments[0] ))->get();
 		}
 	}
 
@@ -574,7 +433,7 @@ abstract class ActiveRecord {
 		 * @var $obj ActiveRecord
 		 */
 		if (! self::$object_cache[$class][$id]) {
-			$obj = new $class();
+			$obj = new $class($id);
 			$obj->loadObject($id);
 		}
 
@@ -593,6 +452,19 @@ abstract class ActiveRecord {
 		$srModelObjectList->where($where, $operator);
 
 		return $srModelObjectList;
+	}
+
+
+	/**
+	 * @param ActiveRecord $ar
+	 * @param array        $on
+	 *
+	 * @return $this
+	 */
+	public static function join(ActiveRecord $ar, $on = array()) {
+		$srModelObjectList = new ActiveRecordList(get_called_class());
+
+		return $srModelObjectList->join($ar, $on);
 	}
 
 
@@ -694,9 +566,8 @@ abstract class ActiveRecord {
 
 	/**
 	 * @return mixed
-	 * FSX TODO funktioniert aktuell nicht
 	 */
-	private static function getFirstFromLastQuery() {
+	public static function getFirstFromLastQuery() {
 		$srModelObjectList = new ActiveRecordList(get_called_class());
 
 		return $srModelObjectList->getFirstFromLastQuery();
@@ -734,30 +605,19 @@ abstract class ActiveRecord {
 	 */
 	public function buildFromArray(array $array) {
 		$class = get_class($this);
-		if (self::returnPrimaryFieldName() === 'id') {
-			if (self::$object_cache[$class][$array['id']]) {
-				return self::$object_cache[$class][$array['id']];
+		$primary = self::returnPrimaryFieldName();
+		if (self::$object_cache[$class][$array[$primary]]) {
+			return self::$object_cache[$class][$array[$primary]];
+		}
+		foreach ($array as $field_name => $value) {
+			if ($this->wakeUp($field_name, $value) === NULL) {
+				$this->{$field_name} = $value;
+			} else {
+				$this->{$field_name} = $this->wakeUp($field_name, $value);
 			}
-			foreach ($array as $field_name => $value) {
-                $this->{$field_name} = $value;
-                if ($this->wakeUp($field_name) !== NULL) {
-                    $this->{$field_name} = $this->wakeUp($field_name);
-                }
-			}
-			self::$object_cache[$class][$array['id']] = $this;
-		} else {
-			if (self::$object_cache[$class][$array[self::returnPrimaryFieldName()]]) {
-				return self::$object_cache[$class][$array[self::returnPrimaryFieldName()]];
-			}
-			foreach ($array as $field_name => $value) {
-                $this->{$field_name} = $value;
-                if ($this->wakeUp($field_name) !== NULL) {
-                    $this->{$field_name} = $this->wakeUp($field_name);
-                }
-			}
-			self::$object_cache[$class][$array[self::returnPrimaryFieldName()]] = $this;
 		}
 		$this->afterObjectLoad();
+		self::$object_cache[$class][$array[$primary]] = $this;
 
 		return $this;
 	}
@@ -781,7 +641,7 @@ abstract class ActiveRecord {
 	/**
 	 * @return mixed
 	 */
-	final protected function getPrimaryFieldValue() {
+	final public function getPrimaryFieldValue() {
 		$primary_fieldname = self::returnPrimaryFieldName();
 
 		return $this->{$primary_fieldname};
@@ -794,11 +654,15 @@ abstract class ActiveRecord {
 	/**
 	 * @param ActiveRecord $obj
 	 *
-	 * @return bool
+	 * @param null         $class
+	 *
 	 * @throws Exception
+	 * @internal param null $foreign_object
+	 *
+	 * @return bool
 	 */
-	private static function setDBFields(ActiveRecord $obj) {
-		$class = get_class($obj);
+	protected static function setDBFields($obj, $class = NULL) {
+		$class = $class ? $class : get_class($obj);
 		if (! self::$db_fields[$class]) {
 			$fields = array();
 			$primary = 0;
@@ -868,7 +732,7 @@ abstract class ActiveRecord {
 	 *
 	 * @return array
 	 */
-	protected static function getAttributesByFilter(ActiveRecord $obj, $filter) {
+	protected static function getAttributesByFilter($obj, $filter) {
 		$reflectionClass = new ReflectionClass($obj);
 		$raw_fields = array();
 		foreach ($reflectionClass->getProperties() as $property) {
@@ -972,54 +836,22 @@ abstract class ActiveRecord {
 				break;
 		}
 		if (! $is_attribute) {
-			throw new Exception('Your field \'' . $fieldname . '\' in Class \'' . __CLASS__ . '\' has wrong attribute: '
-				. $attribute);
-		}
-	}
-}
-
-/**
- * @description Due to limitations in PHP 5.2 we implemented the function 'get_called_class'
- */
-if (! function_exists('get_called_class')) {
-	/**
-	 * Class class_tools
-	 */
-	class class_tools {
-
-		/**
-		 * @var int
-		 */
-		static $i = 0;
-		/**
-		 * @var null
-		 */
-		static $fl = NULL;
-
-
-		/**
-		 * @return mixed
-		 */
-		static function get_called_class() {
-			$bt = debug_backtrace();
-			if (self::$fl == $bt[2]['file'] . $bt[2]['line']) {
-				self::$i ++;
-			} else {
-				self::$i = 0;
-				self::$fl = $bt[2]['file'] . $bt[2]['line'];
-			}
-			$lines = file($bt[2]['file']);
-			preg_match_all('/([a-zA-Z0-9\_]+)::' . $bt[2]['function'] . '/', $lines[$bt[2]['line'] - 1], $matches);
-
-			return $matches[1][self::$i];
+			throw new arException('Your field \'' . $fieldname . '\' in Class \'' . __CLASS__
+				. '\' has wrong attribute: ' . $attribute);
 		}
 	}
 
+
 	/**
-	 * @return mixed
+	 * @param string $str
+	 *
+	 * @return string
 	 */
-	function get_called_class() {
-		return class_tools::get_called_class();
+	protected static function fromCamelCase($str) {
+		$str[0] = strtolower($str[0]);
+		$func = create_function('$c', 'return "_" . strtolower($c[1]);');
+
+		return preg_replace_callback('/([A-Z])/', $func, $str);
 	}
 }
 
