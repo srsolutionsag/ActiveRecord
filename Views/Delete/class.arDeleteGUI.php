@@ -2,7 +2,7 @@
 require_once('./Services/Form/classes/class.ilPropertyFormGUI.php');
 
 /**
- * GUI-Class ActiveRecordDeleteGUI
+ * GUI-Class arDeleteGUI
  *
  * @author            Timon Amstutz <timon.amstutz@ilub.unibe.ch>
  * @version           $Id:
@@ -10,7 +10,6 @@ require_once('./Services/Form/classes/class.ilPropertyFormGUI.php');
  */
 class arDeleteGUI
 {
-
     /**
      * @var  ActiveRecord
      */
@@ -28,8 +27,6 @@ class arDeleteGUI
      * @var ilConfirmationTableGUI
      */
     protected $gui;
-
-
     /**
      * @var string
      */

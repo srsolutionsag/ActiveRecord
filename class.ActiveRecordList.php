@@ -446,7 +446,16 @@ class ActiveRecordList {
 				$primaryFieldName = $obj->getArFieldList()->getPrimaryFieldName();
 				$primary_field_value = $res[$primaryFieldName];
 				$this->result[$primary_field_value] = $obj->buildFromArray($res);
-				$this->result_array[$res[$primaryFieldName]] = $res;
+				$res_awake = array();
+				foreach ($res as $key => $value) {
+					if ($this->getAR()->wakeUp($key, $value)) {
+						$res_awake[$key] = $this->getAR()->wakeUp($key, $value);
+					} else {
+						$res_awake[$key] = $value;
+					}
+				}
+				$this->result_array[$res_awake[$primaryFieldName]] = $res_awake;
+				// $this->result_array[$res[$primaryFieldName]] = $res;
 			}
 			$this->loaded = true;
 		}

@@ -3,7 +3,7 @@ require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.srModelO
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.ActiveRecordList.php');
 
 /**
- * TableGUI ActiveRecordTableGUI
+ * GUI-Class arIndexTableGUI
  *
  * @author  Timon Amstutz <timon.amstutz@ilub.unibe.ch>
  * @version $Id:

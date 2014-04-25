@@ -1,7 +1,7 @@
 <?php
 require_once('./Services/Form/classes/class.ilPropertyFormGUI.php');
 /**
- * GUI-Class ActiveRecordEditGUI
+ * GUI-Class arDisplayGUI
  *
  * @author            Timon Amstutz <timon.amstutz@ilub.unibe.ch>
  * @version           $Id:

@@ -1,6 +1,7 @@
 <?php
 include_once("./Services/Component/classes/class.ilPluginConfigGUI.php");
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.ActiveRecordList.php');
+
 /**
  * @author  Timon Amstutz <timon.amstutz@ilub.unibe.ch>
  * @version $Id$
