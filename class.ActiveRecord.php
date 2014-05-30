@@ -29,6 +29,10 @@ abstract class ActiveRecord implements arStorageInterface {
 	 * @var arFieldList
 	 */
 	protected $arFieldList;
+	/**
+	 * @var bool
+	 */
+	protected $ar_safe_read = true;
 
 
 	/**
@@ -450,7 +454,7 @@ abstract class ActiveRecord implements arStorageInterface {
 
 	public function read() {
 		$records = $this->arConnector->read($this);
-		if (count($records) == 0) {
+		if (count($records) == 0 AND $this->ar_safe_read == true) {
 			throw new arException(arException::RECORD_NOT_FOUND, $this->getPrimaryFieldValue());
 		}
 		foreach ($records as $rec) {
