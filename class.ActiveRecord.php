@@ -499,6 +499,7 @@ abstract class ActiveRecord implements arStorageInterface {
 		return self::get();
 	}
 
+
 	/**
 	 * @param array $additional_params
 	 *
@@ -532,7 +533,13 @@ abstract class ActiveRecord implements arStorageInterface {
 			return NULL;
 		}
 
-		return arObjectCache::get($class_name, $primary_key);
+		try {
+			$obj = arObjectCache::get($class_name, $primary_key);
+		} catch (arException $e) {
+			return NULL;
+		}
+
+		return $obj;
 	}
 
 
@@ -545,12 +552,14 @@ abstract class ActiveRecord implements arStorageInterface {
 	 * @return ActiveRecord
 	 */
 	public static function findOrGetInstance($primary_key, array $add_constructor_args = array()) {
-		if ($obj = self::find($primary_key, $add_constructor_args)) {
+		$activeRecord = $obj = self::find($primary_key, $add_constructor_args);
+		if ($activeRecord !== NULL) {
 			return $obj;
 		} else {
 			$class_name = get_called_class();
 			$obj = arFactory::getInstance($class_name, 0, $add_constructor_args);
 			$obj->setPrimaryFieldValue($primary_key);
+			$obj->is_new = true;
 			$obj->storeObjectToCache();
 
 			return $obj;
