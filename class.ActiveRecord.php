@@ -24,7 +24,7 @@ abstract class ActiveRecord implements arStorageInterface {
 
 	const ACTIVE_RECORD_VERSION = '2.0.4';
 	/**
-	 * @var arConnector
+	 * @var arConnectorDB
 	 */
 	protected $arConnector;
 	/**
@@ -428,9 +428,11 @@ abstract class ActiveRecord implements arStorageInterface {
 
 
 	public function create() {
-		if (arFieldCache::getPrimaryFieldName($this) === 'id') {
+		if ($this->getArFieldList()->getPrimaryField()->getSequence()) {
 			$this->id = $this->arConnector->nextID($this);
 		}
+		echo "!";
+
 		$this->arConnector->create($this, $this->getArrayForConnector());
 		arObjectCache::store($this);
 	}
