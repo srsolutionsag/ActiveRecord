@@ -38,7 +38,19 @@ class arObjectCache {
 	 * @param ActiveRecord $object
 	 */
 	public static function store(ActiveRecord $object) {
-		self::$cache[get_class($object)][$object->getPrimaryFieldValue()] = $object;
+		if (! $object->is_new) {
+			self::$cache[get_class($object)][$object->getPrimaryFieldValue()] = $object;
+		}
+	}
+
+
+	public static function printStats(){
+		foreach(self::$cache as $class => $objects) {
+			echo $class;
+			echo ": ";
+			echo count($objects);
+			echo " Objects<br>";
+		}
 	}
 
 

@@ -72,6 +72,10 @@ class ActiveRecordList {
 	 * @var ActiveRecord
 	 */
 	protected $ar;
+	/**
+	 * @var bool
+	 */
+	protected $raw = false;
 
 
 	/**
@@ -332,6 +336,18 @@ class ActiveRecordList {
 
 
 	/**
+	 * @param bool $set_raw
+	 *
+	 * @return $this
+	 */
+	public function raw($set_raw = true) {
+		$this->setRaw($set_raw);
+
+		return $this;
+	}
+
+
+	/**
 	 * @return bool
 	 */
 	public function hasSets() {
@@ -424,6 +440,8 @@ class ActiveRecordList {
 	 * @param string       $key    shall a specific value be used as a key? if null then the 1. array key is just increasing from 0.
 	 * @param string|array $values which values should be taken? if null all are given. If only a string is given then the result is an 1D array!
 	 *
+	 * @internal param bool $array_only
+	 *
 	 * @return array
 	 */
 	public function getArray($key = NULL, $values = NULL) {
@@ -490,32 +508,40 @@ class ActiveRecordList {
 			return;
 		} else {
 			$records = $this->connector->readSet($this);
+			/**
+			 * @var $obj ActiveRecord
+			 */
+			$class = get_class($this->getAR());
+			$obj = arFactory::getInstance($class, NULL, $this->getAddidtionalParameters());
+			$primaryFieldName = $obj->getArFieldList()->getPrimaryFieldName();
+
 			foreach ($records as $res) {
-				/**
-				 * @var $obj ActiveRecord
-				 */
-				$class = get_class($this->getAR());
-				$obj = arFactory::getInstance($class, NULL, $this->getAddidtionalParameters());
-				$primaryFieldName = $obj->getArFieldList()->getPrimaryFieldName();
 				$primary_field_value = $res[$primaryFieldName];
-				$this->result[$primary_field_value] = $obj->buildFromArray($res);
+				if (! $this->getRaw()) {
+					$obj = arFactory::getInstance($class, NULL, $this->getAddidtionalParameters());
+					$this->result[$primary_field_value] = $obj->buildFromArray($res);
+				}
 				$res_awake = array();
-				foreach ($res as $key => $value) {
-					$arField = $obj->getArFieldList()->getFieldByName($key);
-					if ($arField !== NULL) {
-						if ($arField->isDateField() AND $this->getDateFormat()) {
-							$res_awake[$key . '_unformatted'] = $value;
-							$res_awake[$key . '_unix'] = strtotime($value);
-							$value = date($this->getDateFormat(), strtotime($value));
+				if (! $this->getRaw()) {
+					foreach ($res as $key => $value) {
+						$arField = $obj->getArFieldList()->getFieldByName($key);
+						if ($arField !== NULL) {
+							if ($arField->isDateField() AND $this->getDateFormat()) {
+								$res_awake[$key . '_unformatted'] = $value;
+								$res_awake[$key . '_unix'] = strtotime($value);
+								$value = date($this->getDateFormat(), strtotime($value));
+							}
+						}
+						if ($this->getAR()->wakeUp($key, $value)) {
+							$res_awake[$key] = $this->getAR()->wakeUp($key, $value);
+						} else {
+							$res_awake[$key] = $value;
 						}
 					}
-					if ($this->getAR()->wakeUp($key, $value)) {
-						$res_awake[$key] = $this->getAR()->wakeUp($key, $value);
-					} else {
-						$res_awake[$key] = $value;
-					}
+					$this->result_array[$res_awake[$primaryFieldName]] = $res_awake;
+				} else {
+					$this->result_array[$primary_field_value] = $res;
 				}
-				$this->result_array[$res_awake[$primaryFieldName]] = $res_awake;
 			}
 			$this->loaded = true;
 		}
@@ -602,6 +628,22 @@ class ActiveRecordList {
 	 */
 	public function getAddidtionalParameters() {
 		return $this->addidtional_parameters;
+	}
+
+
+	/**
+	 * @param boolean $raw
+	 */
+	public function setRaw($raw) {
+		$this->raw = $raw;
+	}
+
+
+	/**
+	 * @return boolean
+	 */
+	public function getRaw() {
+		return $this->raw;
 	}
 }
 

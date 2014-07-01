@@ -9,13 +9,13 @@
  */
 class arField {
 
-	const FIELD_TYPE_TEXT = 'text';
-	const FIELD_TYPE_INTEGER = 'integer';
-	const FIELD_TYPE_FLOAT = 'float';
-	const FIELD_TYPE_DATE = 'date';
-	const FIELD_TYPE_TIME = 'time';
-	const FIELD_TYPE_TIMESTAMP = 'timestamp';
-	const FIELD_TYPE_CLOB = 'clob';
+	const FIELD_TYPE_TEXT = 'text'; // MySQL varchar, char
+	const FIELD_TYPE_INTEGER = 'integer'; // MySQL tinyint, smallint, mediumint, int, bigint
+	const FIELD_TYPE_FLOAT = 'float'; // MySQL double
+	const FIELD_TYPE_DATE = 'date'; // MySQL date
+	const FIELD_TYPE_TIME = 'time'; // MySQL time
+	const FIELD_TYPE_TIMESTAMP = 'timestamp'; // MySQL datetime
+	const FIELD_TYPE_CLOB = 'clob'; // MySQL longtext
 	/**
 	 * @var array
 	 */

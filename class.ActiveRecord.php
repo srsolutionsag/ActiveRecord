@@ -34,7 +34,7 @@ abstract class ActiveRecord implements arStorageInterface {
 	/**
 	 * @var bool
 	 */
-	protected $ar_safe_read = false;
+	protected $ar_safe_read = true;
 	/**
 	 * @var string
 	 */
@@ -431,7 +431,6 @@ abstract class ActiveRecord implements arStorageInterface {
 		if ($this->getArFieldList()->getPrimaryField()->getSequence()) {
 			$this->id = $this->arConnector->nextID($this);
 		}
-		echo "!";
 
 		$this->arConnector->create($this, $this->getArrayForConnector());
 		arObjectCache::store($this);
@@ -463,6 +462,8 @@ abstract class ActiveRecord implements arStorageInterface {
 		$records = $this->arConnector->read($this);
 		if (count($records) == 0 AND $this->ar_safe_read == true) {
 			throw new arException(arException::RECORD_NOT_FOUND, $this->getPrimaryFieldValue());
+		} elseif (count($records) == 0 AND $this->ar_safe_read == false) {
+			$this->is_new = true;
 		}
 		foreach ($records as $rec) {
 			foreach ($this->getArrayForConnector() as $k => $v) {
@@ -530,6 +531,8 @@ abstract class ActiveRecord implements arStorageInterface {
 			if (! arObjectCache::isCached($class_name, $primary_key)) {
 				$obj = arFactory::getInstance($class_name, $primary_key, $add_constructor_args);
 				$obj->storeObjectToCache();
+
+				return $obj;
 			}
 		} catch (arException $e) {
 			return NULL;
@@ -554,8 +557,8 @@ abstract class ActiveRecord implements arStorageInterface {
 	 * @return ActiveRecord
 	 */
 	public static function findOrGetInstance($primary_key, array $add_constructor_args = array()) {
-		$activeRecord = $obj = self::find($primary_key, $add_constructor_args);
-		if ($activeRecord !== NULL) {
+		$obj = self::find($primary_key, $add_constructor_args);
+		if ($obj !== NULL) {
 			return $obj;
 		} else {
 			$class_name = get_called_class();
@@ -758,6 +761,18 @@ abstract class ActiveRecord implements arStorageInterface {
 		$srModelObjectList = new ActiveRecordList(self::getCalledClass());
 
 		return $srModelObjectList->connector($connector);
+	}
+
+
+	/**
+	 * @param bool $set_raw
+	 *
+	 * @return ActiveRecordList
+	 */
+	public static function raw($set_raw = true) {
+		$srModelObjectList = new ActiveRecordList(self::getCalledClass());
+
+		return $srModelObjectList->raw($set_raw);
 	}
 
 
