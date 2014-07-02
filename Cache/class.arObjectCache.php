@@ -38,7 +38,7 @@ class arObjectCache {
 	 * @param ActiveRecord $object
 	 */
 	public static function store(ActiveRecord $object) {
-		if (! $object->is_new) {
+		if (!isset($object->is_new)) {
 			self::$cache[get_class($object)][$object->getPrimaryFieldValue()] = $object;
 		}
 	}

@@ -333,7 +333,7 @@ abstract class ActiveRecord implements arStorageInterface {
 	 */
 	final public static function tableExists() {
 		return self::getCalledClass()->arConnector->checkTableExists(self::getCalledClass());
-	}
+ 	}
 
 
 	/**

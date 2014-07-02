@@ -292,6 +292,7 @@ class arConnectorDB extends arConnector {
 		// LIMIT
 		$q .= $arl->getArLimitCollection()->asSQLStatement();
 
+        //TODO: using template in the model.
 		if ($arl->getDebug()) {
 			global $tpl;
 			if ($tpl instanceof ilTemplate) {
@@ -313,7 +314,7 @@ class arConnectorDB extends arConnector {
 	 * @return string
 	 */
 	public function quote($value, $type) {
-		$ilDB = self::returnDB();
+		$ilDB = $this->returnDB();
 
 		return $ilDB->quote($value, $type);
 	}

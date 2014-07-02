@@ -77,7 +77,7 @@ class arFieldList {
 	 * @return mixed
 	 */
 	public static function mapKey($key) {
-		if (self::$key_maps[$key]) {
+		if (isset(self::$key_maps[$key])) {
 			return self::$key_maps[$key];
 		}
 
