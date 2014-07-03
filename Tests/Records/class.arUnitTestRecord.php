@@ -13,8 +13,17 @@ class arUnitTestRecord extends ActiveRecord {
 	/**
 	 * @return string
 	 * @description Return the Name of your Database Table
+	 * @deprecated
 	 */
 	static function returnDbTableName() {
+		return 'ar_demo_real_record';
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getConnectorContainerName() {
 		return 'ar_demo_real_record';
 	}
 
@@ -36,6 +45,7 @@ class arUnitTestRecord extends ActiveRecord {
 	 * @db_is_notnull       true
 	 * @db_fieldtype        integer
 	 * @db_length           4
+	 * @con_sequence        true
 	 */
 	protected $id = 0;
 	/**
@@ -43,6 +53,7 @@ class arUnitTestRecord extends ActiveRecord {
 	 * @db_has_field        true
 	 * @db_fieldtype        text
 	 * @db_length           200
+	 * @con_index           true
 	 */
 	protected $title = '';
 	/**
@@ -125,6 +136,11 @@ class arUnitTestRecord extends ActiveRecord {
 	}
 
 
+	/**
+	 * @param $field_name
+	 *
+	 * @return mixed|string
+	 */
 	public function sleep($field_name) {
 		switch ($field_name) {
 			case 'usr_ids':
@@ -134,6 +150,12 @@ class arUnitTestRecord extends ActiveRecord {
 	}
 
 
+	/**
+	 * @param $field_name
+	 * @param $field_value
+	 *
+	 * @return mixed
+	 */
 	public function wakeUp($field_name, $field_value) {
 		switch ($field_name) {
 			case 'usr_ids':
@@ -143,6 +165,11 @@ class arUnitTestRecord extends ActiveRecord {
 	}
 
 
+	/**
+	 * @param string $field_name
+	 *
+	 * @return mixed|string
+	 */
 	protected function serializeToCSV($field_name) {
 		return $this->sleep($field_name);
 	}

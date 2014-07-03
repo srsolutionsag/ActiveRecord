@@ -190,7 +190,6 @@ abstract class ActiveRecord implements arStorageInterface {
 	 * You can use it to customize your export into csv. (e.g. serialize an array).
 	 *
 	 * @param $field string
-	 * @param $value mixed
 	 *
 	 * @return mixed
 	 */
