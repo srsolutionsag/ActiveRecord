@@ -1,5 +1,6 @@
 ActiveRecord
 ============
+[![Build Status](https://travis-ci.org/studer-raimann/ActiveRecord.svg?branch=master)](https://travis-ci.org/studer-raimann/ActiveRecord)
 
 An ActiveRecord for ILIAS
 
