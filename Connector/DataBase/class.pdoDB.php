@@ -300,6 +300,17 @@ class pdoDB {
 		//TODO TYPE SENSITIVE.
 		return $this->pdo->quote($value);
 	}
+
+
+	/**
+	 * @param $table_name
+	 * @param $index_name
+	 *
+	 * @return null
+	 */
+	public function addIndex($table_name, $index_name) {
+		return NULL;
+	}
 }
 
 ?>

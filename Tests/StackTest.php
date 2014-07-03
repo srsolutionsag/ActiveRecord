@@ -25,7 +25,9 @@ class StackTest extends PHPUnit_Framework_TestCase {
 	public function setUp() {
 		PHPUnit_Framework_Error_Notice::$enabled = false;
 		arUnitTestRecord::installDB();
-		$this->table_name = arUnitTestRecord::returnDbTableName();
+		$arUnitTestRecord = new arUnitTestRecord();
+//		$this->table_name = arUnitTestRecord::returnDbTableName();
+		$this->table_name = $arUnitTestRecord->getConnectorContainerName();
 		$this->pdo = arConnectorPdoDB::getConnector();
 	}
 
