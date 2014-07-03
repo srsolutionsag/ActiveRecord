@@ -26,7 +26,7 @@ class arObjectCache {
 		if (! isset(self::$cache[$class])) {
 			return false;
 		}
-		if (! self::$cache[$class][$id] instanceof ActiveRecord) {
+		if (!isset(self::$cache[$class][$id]) || !self::$cache[$class][$id] instanceof ActiveRecord) {
 			return false;
 		}
 

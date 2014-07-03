@@ -1,5 +1,6 @@
 <?php
 chdir("../");
+set_include_path(getcwd());
 
 $a = getcwd();
 require_once ("./Tests/Records/class.arUnitTestRecord.php");
@@ -42,10 +43,10 @@ class StackTest extends PHPUnit_Framework_TestCase
         $row = $this->pdo->fetchAssoc($statement);
         $statement->closeCursor();
 
-        $this->assertTrue($row["id"] == 1);
-        $this->assertTrue($row["title"] == "Title");
-        $this->assertTrue($row["description"] == "Description");
-        $this->assertTrue($row["usr_ids"] == "[1,5,9]");
+        $this->assertEquals($row["id"], 1);
+        $this->assertEquals($row["title"], "Title");
+        $this->assertEquals($row["description"], "Description");
+        $this->assertEquals($row["usr_ids"], "[1,5,9]");
 
         $entry = new arUnitTestRecord();
         $entry->setDescription("Fscription");
@@ -75,8 +76,24 @@ class StackTest extends PHPUnit_Framework_TestCase
 
     }
 
-    //TODO findOrGetInstance testen
-    //TODO exception bei nicht vorhandener ID mit new ActiveRec.
+    public function testFindOrGetInstance(){
+        $entry = arUnitTestRecord::findOrGetInstance(1);
+        $this->assertEquals($entry->getTitle(), "Title");
+
+        $entry = arUnitTestRecord::findOrGetInstance(1337);
+        $this->assertTrue($entry instanceof arUnitTestRecord);
+        $this->assertEquals($entry->getId(), 1337);
+    }
+
+    /**
+     * @expectedException arException
+     */
+    public function testBehaviourOnInvalidId(){
+        $entry = arUnitTestRecord::find(80085);
+        $this->assertEquals($entry, null);
+
+        $entry = new arUnitTestRecord(80085);
+    }
 
     public function testWhere(){
         $entry = arUnitTestRecord::where(array("title" => "Title"));
@@ -84,7 +101,13 @@ class StackTest extends PHPUnit_Framework_TestCase
         $element = $entry->first();
         $this->assertEquals($element->getId(), 1);
 
-        //TODO some more where statements
+        $query = arUnitTestRecord::where(array("id" => array(1, 3)));
+        $array = $query->getArray();
+        $this->assertEquals(count($array), 2);
+        $first = array_shift($array);
+        $second = array_shift($array);
+        $this->assertEquals($first["id"], 1);
+        $this->assertEquals($second["id"], 3);
     }
 
     public function testLimitAndOrder(){
@@ -95,13 +118,79 @@ class StackTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($first->getId() == 2);
         $this->assertTrue($second->getId() == 3);
 
-        //TODO: meherer order by.
-
+        $list = arUnitTestRecord::orderBy("description", "DESC")->orderBy("id", "ASC");
+        $array = $list->get();
+        $this->assertEquals(count($array), 3);
+        $first = array_shift($array);
+        $second = array_shift($array);
+        $third = array_shift($array);
+        $this->assertEquals($first->getId(), 2);
+        $this->assertEquals($second->getId(), 3);
+        $this->assertEquals($third->getId(), 1);
     }
 
     //TODO joins.
 
     //TODO mehr active records und list funktionen.
+
+    public function testMoreActiveRecordFunctionality(){
+        $entry = arUnitTestRecord::find(1);
+        $csv = $entry->__asCsv(";", true);
+        $this->assertEquals($csv, "id;title;description;usr_ids\n1;Title;Description;[1,5,9]");
+        $array = $entry->__asArray();
+        $array2 = array(
+            'id' => 1,
+            'title' => 'Title',
+            'description' => 'Description',
+            'usr_ids' => array(
+                1, 5, 9
+            )
+        );
+        $this->assertEquals($array, $array2);
+
+        /** @var arUnitTestRecord $copy */
+        $copy = $entry->copy(5050);
+        $this->assertEquals($copy->getTitle(), "Title");
+        $this->assertEquals($copy->getId(), 5050);
+    }
+
+    public function testStoreUpdateAndDelete(){
+        $entry = new arUnitTestRecord();
+        $entry->setTitle("StoredEntry");
+        $entry->setDescription("Testi");
+        $entry->store();
+
+        $statement = $this->pdo->query("SELECT * FROM $this->table_name WHERE title = 'StoredEntry'");
+        $row = $this->pdo->fetchAssoc($statement);
+        $statement->closeCursor();
+        $this->assertEquals($row["description"], "Testi");
+
+        $entry->setDescription("Testi2");
+        $entry->update();
+        $statement = $this->pdo->query("SELECT * FROM $this->table_name WHERE title = 'StoredEntry'");
+        $row = $this->pdo->fetchAssoc($statement);
+        $statement->closeCursor();
+        $this->assertEquals($row["description"], "Testi2");
+
+        $entry->delete();
+        $statement = $this->pdo->query("SELECT * FROM $this->table_name WHERE title = 'StoredEntry'");
+        $count = $this->pdo->numRows($statement);
+        $statement->closeCursor();
+        $this->assertEquals($count, 0);
+    }
+
+    public function testAffectedRows(){
+        $affectedRows = arUnitTestRecord::where("TRUE")->count();
+        $this->assertEquals(3, $affectedRows);
+    }
+
+    /**
+     * @expectedException arException
+     */
+    public function testCopyToWrongLocation(){
+        $entry = arUnitTestRecord::find(1);
+        $copy = $entry->copy(1);
+    }
 
     public static function tearDownAfterClass(){
         $tableName = arUnitTestRecord::returnDbTableName();

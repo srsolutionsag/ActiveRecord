@@ -126,6 +126,7 @@ class arUnitTestRecord extends ActiveRecord {
             case 'usr_ids':
                 return json_encode($this->getUsrIds());
         }
+        parent::sleep($field_name);
     }
 
     public function wakeUp($field_name, $field_value)
@@ -134,7 +135,11 @@ class arUnitTestRecord extends ActiveRecord {
             case 'usr_ids':
                 return json_decode($field_value);
         }
+        parent::wakeUp($field_name, $field_value);
+    }
 
+    protected function serializeToCSV($field_name){
+        return $this->sleep($field_name);
     }
 
 

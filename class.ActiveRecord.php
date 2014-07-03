@@ -167,13 +167,33 @@ abstract class ActiveRecord implements arStorageInterface {
 	public function __asCsv($separator = ';', $header = false) {
 		$line = '';
 		if ($header) {
-			$line .= implode($separator, array_keys($this->__asArray()));
+			$line .= implode($separator, array_keys($this->getArFieldList()->getRawFields()));
+            $line .= "\n";
 		}
-		$line .= implode($separator, array_values($this->__asArray()));
+        $array = array();
+        foreach($this->__asArray() as $field_name => $value){
+            $serialized = $this->serializeToCSV($field_name);
+            if($serialized === NULL)
+                $array[$field_name] = $this->{$field_name};
+            else
+                $array[$field_name] = $serialized;
+        }
+		$line .= implode($separator, array_values($array));
 
 		return $line;
 	}
 
+    /**
+     * This method is called for every field of your instance if you use __asCsv.
+     * You can use it to customize your export into csv. (e.g. serialize an array).
+     *
+     * @param $field string
+     * @param $value mixed
+     * @return mixed
+     */
+    protected function serializeToCSV($field){
+        return NULL;
+    }
 
 	/**
 	 * @return array

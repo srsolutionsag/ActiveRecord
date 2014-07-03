@@ -200,12 +200,12 @@ class pdoDB {
     public function update($table_name, $values, $where){
         $query = "UPDATE $table_name SET ";
         foreach($values as $key => $val){
-            $qval = $this->quote($val, "");
+            $qval = $this->quote($val[1], $val[0]);
             $query .= "$key=$qval,";
         }
         $query = substr($query, 0, -1)." WHERE ";
         foreach($where as $key => $val){
-            $qval = $this->quote($val, "");
+            $qval = $this->quote($val[1], $val[0]);
             $query .= "$key=$qval,";
         }
         $query = substr($query, 0, -1);
