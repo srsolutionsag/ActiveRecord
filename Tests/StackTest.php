@@ -1,6 +1,7 @@
 <?php
-chdir("../../../../../..");
+chdir("../");
 
+$a = getcwd();
 require_once ("./Tests/Records/class.arUnitTestRecord.php");
 require_once ("./Connector/class.arConnectorPdoDB.php");
 
