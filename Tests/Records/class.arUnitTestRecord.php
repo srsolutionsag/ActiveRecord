@@ -3,146 +3,149 @@ require_once('./class.ActiveRecord.php');
 require_once('./Connector/class.arConnectorPdoDB.php');
 
 /**
- * Class arRealRecord
+ * Class arUnitTestRecord
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
- * @version 2.0.4
+ * @version 2.0.5
  */
 class arUnitTestRecord extends ActiveRecord {
 
-    /**
-     * @return string
-     * @description Return the Name of your Database Table
-     */
-    static function returnDbTableName() {
-        return 'ar_demo_real_record';
-    }
-
-    public function __construct($primary = 0){
-        parent::__construct($primary, new arConnectorPdoDB());
-    }
+	/**
+	 * @return string
+	 * @description Return the Name of your Database Table
+	 */
+	static function returnDbTableName() {
+		return 'ar_demo_real_record';
+	}
 
 
-    /**
-     * @var int
-     *
-     * @db_has_field        true
-     * @db_is_unique        true
-     * @db_is_primary       true
-     * @db_is_notnull       true
-     * @db_fieldtype        integer
-     * @db_length           4
-     */
-    protected $id = 0;
-    /**
-     * @var string
-     * @db_has_field        true
-     * @db_fieldtype        text
-     * @db_length           200
-     */
-    protected $title = '';
-    /**
-     * @var string
-     * @db_has_field        true
-     * @db_fieldtype        text
-     * @db_length           200
-     */
-    public $description = '';
-    /**
-     * @var array
-     * @db_has_field        true
-     * @db_fieldtype        text
-     * @db_length           200
-     */
-    protected $usr_ids = array();
+	/**
+	 * @param int $primary
+	 */
+	public function __construct($primary = 0) {
+		parent::__construct($primary, new arConnectorPdoDB());
+	}
 
 
-    /**
-     * @param string $description
-     */
-    public function setDescription($description) {
-        $this->description = $description;
-    }
+	/**
+	 * @var int
+	 *
+	 * @db_has_field        true
+	 * @db_is_unique        true
+	 * @db_is_primary       true
+	 * @db_is_notnull       true
+	 * @db_fieldtype        integer
+	 * @db_length           4
+	 */
+	protected $id = 0;
+	/**
+	 * @var string
+	 * @db_has_field        true
+	 * @db_fieldtype        text
+	 * @db_length           200
+	 */
+	protected $title = '';
+	/**
+	 * @var string
+	 * @db_has_field        true
+	 * @db_fieldtype        text
+	 * @db_length           200
+	 */
+	public $description = '';
+	/**
+	 * @var array
+	 * @db_has_field        true
+	 * @db_fieldtype        text
+	 * @db_length           200
+	 */
+	protected $usr_ids = array();
 
 
-    /**
-     * @return string
-     */
-    public function getDescription() {
-        return $this->description;
-    }
+	/**
+	 * @param string $description
+	 */
+	public function setDescription($description) {
+		$this->description = $description;
+	}
 
 
-    /**
-     * @param int $id
-     */
-    public function setId($id) {
-        $this->id = $id;
-    }
+	/**
+	 * @return string
+	 */
+	public function getDescription() {
+		return $this->description;
+	}
 
 
-    /**
-     * @return int
-     */
-    public function getId() {
-        return $this->id;
-    }
+	/**
+	 * @param int $id
+	 */
+	public function setId($id) {
+		$this->id = $id;
+	}
 
 
-    /**
-     * @param string $title
-     */
-    public function setTitle($title) {
-        $this->title = $title;
-    }
+	/**
+	 * @return int
+	 */
+	public function getId() {
+		return $this->id;
+	}
 
 
-    /**
-     * @return string
-     */
-    public function getTitle() {
-        return $this->title;
-    }
+	/**
+	 * @param string $title
+	 */
+	public function setTitle($title) {
+		$this->title = $title;
+	}
 
 
-    /**
-     * @param array $usr_ids
-     */
-    public function setUsrIds($usr_ids) {
-        $this->usr_ids = $usr_ids;
-    }
+	/**
+	 * @return string
+	 */
+	public function getTitle() {
+		return $this->title;
+	}
 
 
-    /**
-     * @return array
-     */
-    public function getUsrIds() {
-        return $this->usr_ids;
-    }
-
-    public function sleep($field_name)
-    {
-        switch($field_name) {
-            case 'usr_ids':
-                return json_encode($this->getUsrIds());
-        }
-        parent::sleep($field_name);
-    }
-
-    public function wakeUp($field_name, $field_value)
-    {
-        switch($field_name) {
-            case 'usr_ids':
-                return json_decode($field_value);
-        }
-        parent::wakeUp($field_name, $field_value);
-    }
-
-    protected function serializeToCSV($field_name){
-        return $this->sleep($field_name);
-    }
+	/**
+	 * @param array $usr_ids
+	 */
+	public function setUsrIds($usr_ids) {
+		$this->usr_ids = $usr_ids;
+	}
 
 
+	/**
+	 * @return array
+	 */
+	public function getUsrIds() {
+		return $this->usr_ids;
+	}
+
+
+	public function sleep($field_name) {
+		switch ($field_name) {
+			case 'usr_ids':
+				return json_encode($this->getUsrIds());
+		}
+		parent::sleep($field_name);
+	}
+
+
+	public function wakeUp($field_name, $field_value) {
+		switch ($field_name) {
+			case 'usr_ids':
+				return json_decode($field_value);
+		}
+		parent::wakeUp($field_name, $field_value);
+	}
+
+
+	protected function serializeToCSV($field_name) {
+		return $this->sleep($field_name);
+	}
 }
 
 ?>

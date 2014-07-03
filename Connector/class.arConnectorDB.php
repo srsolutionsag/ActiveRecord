@@ -7,7 +7,7 @@ require_once(dirname(__FILE__) . '/../Exception/class.arException.php');
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
  * @author  Timon Amstutz <timon.amstutz@ilub.unibe.ch>
- * @version 2.0.4
+ * @version 2.0.5
  */
 class arConnectorDB extends arConnector {
 
@@ -57,14 +57,30 @@ class arConnectorDB extends arConnector {
 		if ($arFieldList->getPrimaryField()->getFieldType() === 'integer' AND $arFieldList->getPrimaryField()->getSequence() === 'true') {
 			$ilDB->createSequence($ar->getConnectorContainerName());
 		}
-
-//		foreach ($arFieldList->getFields() as $arField) {
-//			if($arField->getInde() === 'true') {
-//
-//			}
-//		}
+		$this->updateIndices($ar);
 
 		return true;
+	}
+
+
+	/**
+	 * @param ActiveRecord $ar
+	 */
+	public function updateIndices(ActiveRecord $ar) {
+		$ilDB = $this->returnDB();
+		$arFieldList = $ar->getArFieldList();
+		$res = $ilDB->query('SHOW INDEX FROM ' . $ar->getConnectorContainerName());
+		$existing_indices = array();
+		while ($rec = $ilDB->fetchObject($res)) {
+			$existing_indices[] = $rec->column_name;
+		}
+		foreach ($arFieldList->getFields() as $i => $arField) {
+			if ($arField->getIndex() === 'true') {
+				if (! in_array($arField->getName(), $existing_indices)) {
+					$ilDB->addIndex($ar->getConnectorContainerName(), array( $arField->getName() ), 'i' . $i);
+				}
+			}
+		}
 	}
 
 
@@ -292,7 +308,7 @@ class arConnectorDB extends arConnector {
 		// LIMIT
 		$q .= $arl->getArLimitCollection()->asSQLStatement();
 
-        //TODO: using template in the model.
+		//TODO: using template in the model.
 		if ($arl->getDebug()) {
 			global $tpl;
 			if ($tpl instanceof ilTemplate) {

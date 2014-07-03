@@ -6,7 +6,7 @@ require_once('class.arField.php');
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
  *
- * @version 2.0.4
+ * @version 2.0.5
  */
 class arFieldList {
 

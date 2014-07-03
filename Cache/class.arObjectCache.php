@@ -4,7 +4,7 @@ require_once(dirname(__FILE__) . '/../Exception/class.arException.php');
 /**
  * Class arObjectCache
  *
- * @version 2.0.4
+ * @version 2.0.5
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
  */
@@ -26,7 +26,7 @@ class arObjectCache {
 		if (! isset(self::$cache[$class])) {
 			return false;
 		}
-		if (!isset(self::$cache[$class][$id]) || !self::$cache[$class][$id] instanceof ActiveRecord) {
+		if (! isset(self::$cache[$class][$id]) || ! self::$cache[$class][$id] instanceof ActiveRecord) {
 			return false;
 		}
 
@@ -38,14 +38,14 @@ class arObjectCache {
 	 * @param ActiveRecord $object
 	 */
 	public static function store(ActiveRecord $object) {
-		if (!isset($object->is_new)) {
+		if (! isset($object->is_new)) {
 			self::$cache[get_class($object)][$object->getPrimaryFieldValue()] = $object;
 		}
 	}
 
 
-	public static function printStats(){
-		foreach(self::$cache as $class => $objects) {
+	public static function printStats() {
+		foreach (self::$cache as $class => $objects) {
 			echo $class;
 			echo ": ";
 			echo count($objects);

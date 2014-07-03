@@ -17,12 +17,12 @@ require_once('Cache/class.arCalledClassCache.php');
  * @experimental
  * @description
  *
- * @version 2.0.4
+ * @version 2.0.5
  *
  */
 abstract class ActiveRecord implements arStorageInterface {
 
-	const ACTIVE_RECORD_VERSION = '2.0.4';
+	const ACTIVE_RECORD_VERSION = '2.0.5';
 	/**
 	 * @var arConnectorDB
 	 */
@@ -42,7 +42,7 @@ abstract class ActiveRecord implements arStorageInterface {
 
 
 	/**
-	 * @return \arConnector
+	 * @return \arConnectorDB
 	 */
 	public function getArConnector() {
 		return $this->arConnector;
@@ -168,32 +168,36 @@ abstract class ActiveRecord implements arStorageInterface {
 		$line = '';
 		if ($header) {
 			$line .= implode($separator, array_keys($this->getArFieldList()->getRawFields()));
-            $line .= "\n";
+			$line .= "\n";
 		}
-        $array = array();
-        foreach($this->__asArray() as $field_name => $value){
-            $serialized = $this->serializeToCSV($field_name);
-            if($serialized === NULL)
-                $array[$field_name] = $this->{$field_name};
-            else
-                $array[$field_name] = $serialized;
-        }
+		$array = array();
+		foreach ($this->__asArray() as $field_name => $value) {
+			$serialized = $this->serializeToCSV($field_name);
+			if ($serialized === NULL) {
+				$array[$field_name] = $this->{$field_name};
+			} else {
+				$array[$field_name] = $serialized;
+			}
+		}
 		$line .= implode($separator, array_values($array));
 
 		return $line;
 	}
 
-    /**
-     * This method is called for every field of your instance if you use __asCsv.
-     * You can use it to customize your export into csv. (e.g. serialize an array).
-     *
-     * @param $field string
-     * @param $value mixed
-     * @return mixed
-     */
-    protected function serializeToCSV($field){
-        return NULL;
-    }
+
+	/**
+	 * This method is called for every field of your instance if you use __asCsv.
+	 * You can use it to customize your export into csv. (e.g. serialize an array).
+	 *
+	 * @param $field string
+	 * @param $value mixed
+	 *
+	 * @return mixed
+	 */
+	protected function serializeToCSV($field) {
+		return NULL;
+	}
+
 
 	/**
 	 * @return array
@@ -353,7 +357,7 @@ abstract class ActiveRecord implements arStorageInterface {
 	 */
 	final public static function tableExists() {
 		return self::getCalledClass()->arConnector->checkTableExists(self::getCalledClass());
- 	}
+	}
 
 
 	/**

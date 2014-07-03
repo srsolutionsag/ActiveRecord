@@ -5,7 +5,7 @@
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
  *
- * @version 2.0.4
+ * @version 2.0.5
  */
 class arField {
 
@@ -87,7 +87,7 @@ class arField {
 	public function getAttributesForConnector() {
 		$return = array();
 		foreach (arFieldList::getAllowedConnectorFields() as $field_name) {
-			if (isset($this->{$field_name})&&$this->{$field_name} AND self::isAllowedAttribute($this->getFieldType(), $field_name)) {
+			if (isset($this->{$field_name}) && $this->{$field_name} AND self::isAllowedAttribute($this->getFieldType(), $field_name)) {
 				$return[arFieldList::mapKey($field_name)] = $this->{$field_name};
 			}
 		}

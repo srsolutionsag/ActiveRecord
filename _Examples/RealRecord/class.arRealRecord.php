@@ -5,7 +5,7 @@ require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.ActiveRe
  * Class arRealRecord
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
- * @version 2.0.4
+ * @version 2.0.5
  */
 class arRealRecord extends ActiveRecord {
 

@@ -12,7 +12,7 @@ require_once(dirname(__FILE__) . '/Connector/Order/class.arOrderCollection.php')
  *
  * @description
  *
- * @version 2.0.4
+ * @version 2.0.5
  */
 class ActiveRecordList {
 

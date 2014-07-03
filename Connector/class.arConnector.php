@@ -7,7 +7,7 @@
  *
  * @description
  *
- * @version 2.0.4
+ * @version 2.0.5
  */
 abstract class arConnector {
 
@@ -121,6 +121,12 @@ abstract class arConnector {
 	 * @return string
 	 */
 	abstract public function quote($value, $type);
+
+
+	/**
+	 * @param ActiveRecord $ar
+	 */
+	abstract public function updateIndices(ActiveRecord $ar);
 }
 
 ?>

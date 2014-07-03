@@ -6,7 +6,7 @@ require_once(dirname(__FILE__) . '/../Exception/class.arException.php');
  * Class arConnectorSession
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
- * @version 2.0.4
+ * @version 2.0.5
  */
 class arConnectorSession extends arConnector {
 
@@ -244,6 +244,14 @@ class arConnectorSession extends arConnector {
 	 */
 	public function quote($value, $type) {
 		return $value;
+	}
+
+
+	/**
+	 * @param ActiveRecord $ar
+	 */
+	public function updateIndices(ActiveRecord $ar) {
+		// TODO: Implement updateIndices() method.
 	}
 }
 

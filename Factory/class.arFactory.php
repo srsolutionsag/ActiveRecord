@@ -5,7 +5,7 @@ require_once(dirname(__FILE__) . '/../Exception/class.arException.php');
  * Class arFactory
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
- * @version 2.0.4
+ * @version 2.0.5
  */
 class arFactory {
 
@@ -24,7 +24,7 @@ class arFactory {
 		$ref = new ReflectionClass($class_name);
 		if ($ref->isInstantiable()) {
 			$obj = $ref->newInstanceArgs(array_merge(array( $primary_key ), $additional_arguments));
-			if($primary_key == 0) {
+			if ($primary_key == 0) {
 				$obj = clone($obj);
 			}
 		} else {
