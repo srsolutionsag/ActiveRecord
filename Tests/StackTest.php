@@ -1,8 +1,4 @@
 <?php
-chdir("../");
-set_include_path(getcwd());
-
-$a = getcwd();
 require_once ("./Tests/Records/class.arUnitTestRecord.php");
 require_once ("./Connector/class.arConnectorPdoDB.php");
 
@@ -194,7 +190,8 @@ class StackTest extends PHPUnit_Framework_TestCase
 
     public static function tearDownAfterClass(){
         $tableName = arUnitTestRecord::returnDbTableName();
-        arConnectorPdoDB::getConnector()->manipulate("DROP TABLE {$tableName}");
+        $pbo = new pdoDB();
+        $pbo->manipulate("DROP TABLE {$tableName}");
     }
 }
 ?>

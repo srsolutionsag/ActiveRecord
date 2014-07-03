@@ -21,7 +21,7 @@ class pdoDB {
     );
 
     public function __construct(){
-        $this->pdo = new PDO('mysql:host=localhost;dbname=test_db;charset=utf8', 'test_db', 'qwertzu');
+        $this->pdo = new PDO('mysql:host=localhost;dbname=test_db;charset=utf8', 'travis', '');
         $this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
         $attr = PDO::MYSQL_ATTR_USE_BUFFERED_QUERY;
     }
