@@ -45,7 +45,6 @@ class arUnitTestRecord extends ActiveRecord {
 	 * @db_is_notnull       true
 	 * @db_fieldtype        integer
 	 * @db_length           4
-	 * @con_sequence        true
 	 */
 	protected $id = 0;
 	/**

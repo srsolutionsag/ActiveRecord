@@ -17,7 +17,7 @@ class arFactory {
 	 * @return ActiveRecord
 	 * @throws arException
 	 */
-	public static function getInstance($class_name, $primary_key, $additional_arguments = array()) {
+	public static function getInstance($class_name, $primary_key = 0, $additional_arguments = array()) {
 		/**
 		 * @var $obj ActiveRecord
 		 */

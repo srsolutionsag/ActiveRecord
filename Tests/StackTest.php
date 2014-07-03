@@ -33,7 +33,7 @@ class StackTest extends PHPUnit_Framework_TestCase {
 
 
 	public function testTableExistant() {
-		$this->assertTrue($this->pdo->tableExists(arUnitTestRecord::returnDbTableName()));
+		$this->assertTrue($this->pdo->tableExists($this->table_name));
 	}
 
 
@@ -142,6 +142,42 @@ class StackTest extends PHPUnit_Framework_TestCase {
 	//TODO joins.
 
 	//TODO mehr active records und list funktionen.
+
+	public function testMoreListFuntionality() {
+		$entry = arUnitTestRecord::where(array( "title" => "Title" ), '!=')->limit(0,100)->orderBy('title', 'DESC')->where('id != 1')->count();
+		$this->assertEquals($entry, 2);
+
+		$arUnitTestRecord8 = arUnitTestRecord::findOrGetInstance(8);
+		$this->assertTrue($arUnitTestRecord8 instanceof arUnitTestRecord);
+
+		$arUnitTestRecord8_fromCache = arUnitTestRecord::find(8);
+		$this->assertEquals($arUnitTestRecord8_fromCache, NULL);
+
+		$arUnitTestRecordInstance = arFactory::getInstance('arUnitTestRecord');
+		$this->assertEquals($arUnitTestRecordInstance->getId(), 0);
+
+		$arUnitTestRecord1_from_arObjectCache = arObjectCache::get('arUnitTestRecord', 2);
+		$this->assertEquals($arUnitTestRecord1_from_arObjectCache->getId(), 2);
+
+		$arUnitTestRecord8_fromCache = arUnitTestRecord::find(2);
+		$this->assertEquals($arUnitTestRecord8_fromCache->getId(), 2);
+		$this->assertTrue(arObjectCache::isCached('arUnitTestRecord', 2));
+		arObjectCache::purge($arUnitTestRecord1_from_arObjectCache);
+		$this->assertFalse(arObjectCache::isCached('arUnitTestRecord', 2));
+		$arUnitTestRecord8_fromCache = arUnitTestRecord::find(2);
+		$this->assertEquals($arUnitTestRecord8_fromCache->getId(), 2);
+
+
+		$arUnitTestRecord6 = new arUnitTestRecord();
+		$arUnitTestRecord6->setId(16);
+		$arUnitTestRecord6->setTitle('Title 16');
+		$arUnitTestRecord6->create();
+
+		$this->assertTrue(arObjectCache::isCached('arUnitTestRecord', 16));
+		$arUnitTestRecord6->delete();
+		$this->assertFalse(arObjectCache::isCached('arUnitTestRecord', 16));
+		$this->assertEquals(arUnitTestRecord::find(16), NULL);
+	}
 
 	public function testMoreActiveRecordFunctionality() {
 		$entry = arUnitTestRecord::find(1);

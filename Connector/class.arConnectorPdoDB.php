@@ -28,7 +28,20 @@ class arConnectorPdoDB extends arConnectorDB {
 	}
 
 
+	/**
+	 * @return mixed
+	 */
 	public static function getConnector() {
 		return self::$pbo_connect;
+	}
+
+
+	/**
+	 * @param ActiveRecord $ar
+	 *
+	 * @return null|void
+	 */
+	public function updateIndices(ActiveRecord $ar) {
+		return NULL;
 	}
 }
