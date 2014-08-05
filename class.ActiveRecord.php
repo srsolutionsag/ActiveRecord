@@ -17,12 +17,12 @@ require_once('Cache/class.arCalledClassCache.php');
  * @experimental
  * @description
  *
- * @version 2.0.5
+ * @version 2.0.6
  *
  */
 abstract class ActiveRecord implements arStorageInterface {
 
-	const ACTIVE_RECORD_VERSION = '2.0.5';
+	const ACTIVE_RECORD_VERSION = '2.0.6';
 	/**
 	 * @var arConnectorDB
 	 */
