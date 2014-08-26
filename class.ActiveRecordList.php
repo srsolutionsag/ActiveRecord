@@ -160,8 +160,8 @@ class ActiveRecordList {
 	 * @throws arException
 	 */
 	public function orderBy($order_by, $order_direction = 'ASC') {
-		if (! $this->getAR()->getArFieldList()->isField($order_by)) {
-			throw new arException(arException::LIST_ORDER_BY_WRONG_FIELD, $order_by);
+		if (! $this->getAR()->getArFieldList()->isField($order_by) ) {
+//			throw new arException(arException::LIST_ORDER_BY_WRONG_FIELD, $order_by); // Due to Bugfix with Joins
 		}
 		$arOrder = new arOrder();
 		$arOrder->setFieldname($order_by);
