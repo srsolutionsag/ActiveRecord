@@ -47,7 +47,7 @@ class arFieldList {
 		self::LENGTH,
 	);
 	/**
-	 * @var arField
+	 * @var arField|array
 	 */
 	protected $primary_field;
 	/**
