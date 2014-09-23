@@ -22,7 +22,10 @@ class arJoinCollection extends arStatementCollection {
 			$return = 'SELECT ';
 			foreach ($this->getJoins() as $join) {
 				foreach ($join->getFields() as $field) {
-					$selected_fields[] = $join->getTableName() . '.' . $field;
+                    if(!in_array($join->getTableName() . '.' . $field,$selected_fields))
+                    {
+                        $selected_fields[] = $join->getTableName() . '.' . $field;
+                    }
 				}
 			}
 			$return .= implode(', ', $selected_fields);
