@@ -180,9 +180,6 @@ class ActiveRecordList {
 	 * @throws arException
 	 */
 	public function limit($start, $end) {
-		if ($start > $end) {
-			throw new arException(arException::LIST_WRONG_LIMIT);
-		}
 		$arLimit = new arLimit();
 		$arLimit->setStart($start);
 		$arLimit->setEnd($end);
