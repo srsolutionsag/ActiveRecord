@@ -26,7 +26,7 @@ class arOrder extends arStatement {
 	 * @return string
 	 */
 	public function asSQLStatement(ActiveRecord $ar) {
-		return ' ' . $this->getFieldname() . ' ' . strtoupper($this->getDirection());
+		return ' ' . $ar->getConnectorContainerName() . '.' . $this->getFieldname() . ' ' . strtoupper($this->getDirection());
 	}
 
 
