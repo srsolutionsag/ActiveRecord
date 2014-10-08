@@ -160,8 +160,8 @@ class ActiveRecordList {
 	 * @throws arException
 	 */
 	public function orderBy($order_by, $order_direction = 'ASC') {
-		if (! $this->getAR()->getArFieldList()->isField($order_by) ) {
-//			throw new arException(arException::LIST_ORDER_BY_WRONG_FIELD, $order_by); // Due to Bugfix with Joins
+		if (! $this->getAR()->getArFieldList()->isField($order_by)) {
+			//			throw new arException(arException::LIST_ORDER_BY_WRONG_FIELD, $order_by); // Due to Bugfix with Joins
 		}
 		$arOrder = new arOrder();
 		$arOrder->setFieldname($order_by);
@@ -222,8 +222,17 @@ class ActiveRecordList {
 		if (! $this->getAR()->getArFieldList()->isField($on_this)) {
 			throw new arException(arException::LIST_JOIN_ON_WRONG_FIELD, $on_this);
 		}
+		$full_names = false;
+		foreach ($fields as $field_name) {
+			if ($this->getAR()->getArFieldList()->isField($field_name)) {
+				$full_names = true;
+				break;
+			}
+		}
+
 		$arJoin = new arJoin();
 		$arJoin->setType($type);
+		$arJoin->setFullNames($full_names);
 		$arJoin->setTableName($tablename);
 		$arJoin->setOnFirstField($on_this);
 		$arJoin->setOnSecondField($on_external);

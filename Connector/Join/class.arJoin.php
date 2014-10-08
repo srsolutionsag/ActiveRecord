@@ -38,6 +38,10 @@ class arJoin extends arStatement {
 	 * @var string
 	 */
 	protected $on_second_field = '';
+	/**
+	 * @var bool
+	 */
+	protected $full_names = false;
 
 
 	/**
@@ -164,6 +168,22 @@ class arJoin extends arStatement {
 	 */
 	public function getType() {
 		return $this->type;
+	}
+
+
+	/**
+	 * @param boolean $full_names
+	 */
+	public function setFullNames($full_names) {
+		$this->full_names = $full_names;
+	}
+
+
+	/**
+	 * @return boolean
+	 */
+	public function getFullNames() {
+		return $this->full_names;
 	}
 }
 
