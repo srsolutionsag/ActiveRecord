@@ -18,16 +18,16 @@ cd Customizing/global/plugins/Libraries
 git clone https://github.com/studer-raimann/ActiveRecord.git
 ```
 
-
 Testing
 -------
 If you want to run the tests locally use composer to install PHPUnit. You can then use the vendor/autoload.php file to load PHPUnit in your favorite IDE.
 
 Contact
 -------
-studer + raimann ag
-Waldeggstrasse 72
-3097 Liebefeld
-Switzerland  
+studer + raimann ag  
+Waldeggstrasse 72  
+3097 Liebefeld  
+Switzerland 
 
-info@studer-raimann.ch
+info@studer-raimann.ch  
+www.studer-raimann.ch  
