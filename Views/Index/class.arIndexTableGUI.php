@@ -227,7 +227,7 @@ class arIndexTableGUI extends srModelObjectTableGUI
                 /**
                  * @var ilFormPropertyGUI|ilTextInputGUI $filter
                  */
-                $this->addFilterWhere($filter->getType(), $filter->getPostVar(), $filter->getValue());
+                $this->addFilterWhere($filter->getInputType(), $filter->getPostVar(), $filter->getValue());
             }
         }
     }
