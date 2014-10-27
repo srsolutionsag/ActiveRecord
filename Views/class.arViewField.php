@@ -1,5 +1,6 @@
 <?php
 include_once('./Customizing/global/plugins/Libraries/ActiveRecord/Fields/class.arField.php');
+
 /**
  * GUI-Class arViewField
  *
@@ -18,25 +19,29 @@ class arViewField extends arField
      */
     protected $position = 1000;
     /**
-     * @var string
+     * @var bool
      */
-    protected $visible = "";
+    protected $visible = false;
+    /**
+     * @var bool
+     */
+    protected $custom_field = false;
 
 
     /**
      * @param $name
      * @param null $txt
-     * @param null $type
-     * @param null $position
+     * @param int $position
      * @param bool $visible
+     * @param bool $custom_field
      */
-    function __construct($name, $txt = null, $type = null, $position = 1000, $visible = true)
+    function __construct($name, $txt = null, $position = 0, $visible = true, $custom_field = false)
     {
         $this->name     = $name;
         $this->position = $position;
         $this->txt      = $txt;
-        $this->type     = $type;
         $this->visible  = $visible;
+        $this->custom_field = $custom_field;
     }
 
     /**
@@ -68,7 +73,12 @@ class arViewField extends arField
      */
     public function getTxt()
     {
-        return $this->txt;
+        if($this->txt)
+        {
+            return $this->txt;
+        }
+        return $this->getName();
+
     }
 
     /**
@@ -88,6 +98,23 @@ class arViewField extends arField
     }
 
     /**
+     * @param boolean $custom_field
+     */
+    public function setCustomField($custom_field)
+    {
+        $this->custom_field = $custom_field;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getCustomField()
+    {
+        return $this->custom_field;
+    }
+
+
+    /**
      * @param arField $field
      * @return arViewField
      */
@@ -96,8 +123,9 @@ class arViewField extends arField
         require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/class.arIndexTableField.php');
         require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Edit/class.arEditField.php');
         require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Display/class.arDisplayField.php');
-        $new_class = get_called_class();
-        $obj = new $new_class();
+
+        $field_class = get_called_class();
+        $obj = new $field_class($field->getName());
         foreach (get_object_vars($field) as $key => $name)
         {
             $obj->$key = $name;
@@ -105,5 +133,3 @@ class arViewField extends arField
         return $obj;
     }
 }
-
-?>

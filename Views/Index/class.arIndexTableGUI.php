@@ -2,6 +2,7 @@
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.srModelObjectTableGUI.php');
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.ActiveRecordList.php');
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/class.arIndexTableField.php');
+require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/class.arIndexTableFields.php');
 
 /**
  * GUI-Class arIndexTableGUI
@@ -12,21 +13,6 @@ require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/cl
  */
 class arIndexTableGUI extends srModelObjectTableGUI
 {
-
-
-    /**
-     * @var arIndexTableField|array
-     */
-    protected $fields = array();
-    /**
-     * @var arIndexTableField|array
-     */
-    protected $fields_for_data = null;
-
-    /**
-     * @var ActiveRecordList
-     */
-    protected $active_record_list = NULL;
     /**
      * @var array
      */
@@ -44,42 +30,39 @@ class arIndexTableGUI extends srModelObjectTableGUI
      */
     protected $table_title = '';
 
+    /**
+     * arViewFields
+     */
+    protected $fields = null;
+
+    /**
+     * @var ActiveRecordList|null
+     */
+    protected $active_record_list = null;
 
     /**
      * @param arGUI $a_parent_obj
      * @param string $a_parent_cmd
      * @param ActiveRecordList $active_record_list
+     * @param null $title
      */
-    public function __construct(arGUI $a_parent_obj, $a_parent_cmd, ActiveRecordList $active_record_list)
+    public function __construct(arGUI $a_parent_obj, $a_parent_cmd, ActiveRecordList $active_record_list,$title = null)
     {
         $this->active_record_list = $active_record_list;
         $this->parent_gui         = $a_parent_obj;
         $this->ar_id_field_name   = arFieldCache::getPrimaryFieldName($this->active_record_list->getAR());
-        $title                    = strtolower(str_replace("Record", "", get_class($this->active_record_list->getAR()))) . "_index";
+        if(!$title)
+        {
+            $title = strtolower(str_replace("Record", "", get_class($this->active_record_list->getAR()))) . "_index";
+        }
         $this->setTableTitle($this->txt($title));
-        $this->generateFields();
+        $this->fields = new arIndexTableFields($active_record_list->getAR());
         $this->customizeFields();
-        $this->sortFields();
+        $this->fields->sortFields();
         parent::__construct($a_parent_obj, $a_parent_cmd);
         $this->initToolbar();
         $this->addActions();
 
-    }
-
-
-    /**
-     * @return bool
-     */
-    protected function generateFields()
-    {
-        $fields = $this->active_record_list->getAR()->getArFieldList()->getFields();
-
-        foreach ($fields as $standard_field)
-        {
-            $field = arIndexTableField::castFromFieldToViewField($standard_field);
-            $this->addField($field);
-        }
-        return true;
     }
 
     protected function customizeFields()
@@ -88,38 +71,28 @@ class arIndexTableGUI extends srModelObjectTableGUI
     }
 
     /**
-     * @return bool
+     * @param arIndexTableField $fields
+     * @return mixed
      */
-    protected function sortFields()
-    {
-        uasort($this->fields, function (arIndexTableField $field_a, arIndexTableField $field_b)
-        {
-            return $field_a->getPosition() > $field_b->getPosition();
-        });
-    }
-
-    /**
-     * @param arIndexTableField|array
-     */
-    public function setFields($fields)
-    {
+    function setFields(arIndexTableField $fields){
         $this->fields = $fields;
     }
 
     /**
-     * @return arIndexTableField|array
+     * @return arIndexTableFields
      */
     public function getFields()
     {
-        return $this->fields;
+        return $this->fields->getFields();
     }
 
     /**
+     * @param $field_name
      * @return arIndexTableField
      */
     public function getField($field_name)
     {
-        return $this->fields[$field_name];
+        return $this->fields->getField($field_name);
     }
 
 
@@ -128,8 +101,10 @@ class arIndexTableGUI extends srModelObjectTableGUI
      */
     public function addField(arIndexTableField $field)
     {
-        $this->fields[$field->getName()] = $field;
+        $this->fields->addField($field);
     }
+
+
 
     protected function addActions()
     {
@@ -193,20 +168,22 @@ class arIndexTableGUI extends srModelObjectTableGUI
         $this->filterTableData();
         $this->beforeGetData();
         $this->setOrderAndSegmentation();
-
         $ar_data = $this->active_record_list->getArray();
         $data    = array();
 
         foreach ($ar_data as $key => $item)
         {
             $data[$key] = array();
-            foreach ($this->getFieldsForData() as $field)
+            foreach ($this->fields->getFieldsForDisplay() as $field)
             {
+                /**
+                 * @var arIndexTableField $field
+                 */
                 if (array_key_exists($field->getName(), $item))
                 {
                     if (!$item[$field->getName()])
                     {
-                        $data[$key][$field->getName()] = $this->setArFieldEmptyFieldData($field, $item);
+                        $data[$key][$field->getName()] = $this->setEmptyFieldData($field, $item);
                     } else
                     {
                         $data[$key][$field->getName()] = $this->setArFieldData($field, $item, $item[$field->getName()]);
@@ -221,10 +198,16 @@ class arIndexTableGUI extends srModelObjectTableGUI
         $this->setData($data);
     }
 
+
+    protected function beforeGetData(){
+    }
+
     protected function setOrderAndSegmentation(){
         $this->setExternalSorting(true);
         $this->setExternalSegmentation(true);
-        $this->setDefaultOrderField('title');
+        if(!$this->getDefaultOrderField()){
+            $this->setDefaultOrderField($this->active_record_list->getAR()->getArFieldList()->getPrimaryField());
+        }
         $this->determineLimit();
         $this->determineOffsetAndOrder();
         $this->setMaxCount($this->active_record_list->count());
@@ -232,27 +215,7 @@ class arIndexTableGUI extends srModelObjectTableGUI
         $this->active_record_list->limit($this->getOffset() , $this->getLimit());
     }
 
-    protected function beforeGetData()
-    {
-    }
 
-    /**
-     * @return arIndexTableField|array
-     */
-    protected function getFieldsForData()
-    {
-        if(!$this->fields_for_data && $this->getFields())
-        {
-            foreach ($this->getFields() as $field)
-            {
-                if (($field->getVisible() || $field->getName() == $this->ar_id_field_name))
-                {
-                    $this->fields_for_data[] = $field;
-                }
-            }
-        }
-        return $this->fields_for_data;
-    }
 
     protected function filterTableData()
     {
@@ -261,10 +224,10 @@ class arIndexTableGUI extends srModelObjectTableGUI
         {
             foreach ($filters as $filter)
             {
-                if (!$this->addCustomFilterWhere($filter->getInputType(), $filter->getPostVar(), $filter->getValue()))
-                {
-                    $this->addFilterWhere($filter->getInputType(), $filter->getPostVar(), $filter->getValue());
-                }
+                /**
+                 * @var ilFormPropertyGUI|ilTextInputGUI $filter
+                 */
+                $this->addFilterWhere($filter->getType(), $filter->getPostVar(), $filter->getValue());
             }
         }
     }
@@ -274,11 +237,17 @@ class arIndexTableGUI extends srModelObjectTableGUI
      * @param $item
      * @return string
      */
-    protected function setArFieldEmptyFieldData(arIndexTableField $field, $item)
+    protected function setEmptyFieldData(arIndexTableField $field, $item)
     {
         return "";
     }
 
+    /**
+     * @param arIndexTableField $field
+     * @param $item
+     * @param $value
+     * @return string
+     */
     protected function setArFieldData(arIndexTableField $field, $item, $value)
     {
         switch ($field->getFieldType())
@@ -292,8 +261,8 @@ class arIndexTableGUI extends srModelObjectTableGUI
             case 'time':
             case 'timestamp':
                 return $this->setDateFieldData($field, $item, $value);
-                break;
         }
+        return "";
     }
 
     /**
@@ -316,17 +285,6 @@ class arIndexTableGUI extends srModelObjectTableGUI
     protected function setCustomFieldData(arIndexTableField $field, $item)
     {
         return "CUSTOM-OVERRIDE: setCustomFieldData";
-    }
-
-    /**
-     * @param $type
-     * @param $name
-     * @param $value
-     * @return bool
-     */
-    protected function addCustomFilterWhere($type, $name, $value)
-    {
-        return false;
     }
 
     /**
@@ -369,24 +327,16 @@ class arIndexTableGUI extends srModelObjectTableGUI
 
         foreach ($fields as $field)
         {
+            /**
+             * @var arIndexTableField $field
+             */
             if ($field->getHasFilter())
             {
-                if (!$this->addCustomFilterField($field))
-                {
-                    $this->addFilterField($field);
-                }
+                $this->addFilterField($field);
             }
         }
     }
 
-    /**
-     * @param arIndexTableField $field
-     * @return bool
-     */
-    protected function addCustomFilterField(arIndexTableField $field)
-    {
-        return false;
-    }
 
     /**
      * @param arIndexTableField $field
@@ -397,12 +347,13 @@ class arIndexTableGUI extends srModelObjectTableGUI
         {
             case 'integer':
             case 'float':
-                new $this->addFilterItemToForm(ilNumberInputGUI($this->txt($field->getName()), $field->getName()));
+                $this->addFilterItemToForm(new ilNumberInputGUI($this->txt($field->getTxt()), $field->getName()));
                 break;
             case 'text':
             case 'clob':
                 include_once("./Services/Form/classes/class.ilTextInputGUI.php");
-                $this->addFilterItemToForm(new ilTextInputGUI($this->txt($field->getName()), $field->getName()));
+                $this->addFilterItemToForm(new ilTextInputGUI($this->txt($field->getTxt()), $field->getName()));
+                break;
             case 'date':
             case 'time':
             case 'timestamp':
@@ -424,12 +375,18 @@ class arIndexTableGUI extends srModelObjectTableGUI
         $this->initTableData();
     }
 
+    /**
+     * @return bool
+     */
     protected function initTableProperties()
     {
         return false;
     }
 
 
+    /**
+     * @return bool
+     */
     protected function initFormActionsAndCmdButtons()
     {
         return false;
@@ -474,10 +431,10 @@ class arIndexTableGUI extends srModelObjectTableGUI
     }
 
     /**
-     * @param $field
-     * @param $value
+     * @param arIndexTableField $field
+     * @param mixed $value
      */
-    protected function parseEntry($field, $value)
+    protected function parseEntry(arIndexTableField $field, $value)
     {
         $this->tpl->setCurrentBlock('entry');
         $this->tpl->setVariable('ENTRY_CONTENT', $value);
@@ -544,14 +501,16 @@ class arIndexTableGUI extends srModelObjectTableGUI
                 {
                     if ($this->getField($key)->getSortable())
                     {
-                        $this->addColumn($this->txt($key), $key);
+                        $this->addColumn($this->txt($this->getField($key)->getTxt()), $key);
                     } else
                     {
-                        $this->addColumn($this->txt($key));
+                        $this->addColumn($this->txt($this->getField($key)->getTxt()));
                     }
                 }
             }
-            $this->addColumn($this->txt('actions', false));
+            if (!empty($this->actions)){
+                $this->addColumn($this->txt('actions', false));
+            }
         }
     }
 
@@ -613,5 +572,3 @@ class arIndexTableGUI extends srModelObjectTableGUI
         return $this->parent_gui->txt($txt, $plugin_txt);
     }
 }
-
-?>
