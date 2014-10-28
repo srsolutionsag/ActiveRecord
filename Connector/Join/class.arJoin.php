@@ -57,7 +57,7 @@ class arJoin extends arStatement {
             $return .= ' ON ' . $this->getOnFirstField() . ' ' . $this->getOperator() . ' ';
         }
         else{
-            $return .= ' ON '. $ar->getConnectorContainerName() . $this->getOnFirstField() . ' ' . $this->getOperator() . ' ';
+            $return .= ' ON '. $ar->getConnectorContainerName() .'.'. $this->getOnFirstField() . ' ' . $this->getOperator() . ' ';
         }
 		$return .= $join_table_name . '.' . $this->getOnSecondField();
 		return $return;
