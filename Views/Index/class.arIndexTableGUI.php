@@ -22,10 +22,6 @@ class arIndexTableGUI extends srModelObjectTableGUI
      */
     protected $toolbar = NULL;
     /**
-     * @var arGUI|null
-     */
-    protected $parent_gui = NULL;
-    /**
      * @var string
      */
     protected $table_title = '';
@@ -44,25 +40,45 @@ class arIndexTableGUI extends srModelObjectTableGUI
      * @param arGUI $a_parent_obj
      * @param string $a_parent_cmd
      * @param ActiveRecordList $active_record_list
-     * @param null $title
+     * @param null $custom_title
      */
-    public function __construct(arGUI $a_parent_obj, $a_parent_cmd, ActiveRecordList $active_record_list,$title = null)
+    public function __construct(arGUI $a_parent_obj, $a_parent_cmd, ActiveRecordList $active_record_list,$custom_title = null)
     {
         $this->active_record_list = $active_record_list;
-        $this->parent_gui         = $a_parent_obj;
+
+        $this->parent_obj         = $a_parent_obj;
         $this->ar_id_field_name   = arFieldCache::getPrimaryFieldName($this->active_record_list->getAR());
-        if(!$title)
+
+        if($custom_title)
         {
-            $title = strtolower(str_replace("Record", "", get_class($this->active_record_list->getAR()))) . "_index";
+            $this->setTableTitle($this->txt($custom_title));
         }
-        $this->setTableTitle($this->txt($title));
+
         $this->fields = new arIndexTableFields($active_record_list->getAR());
         $this->customizeFields();
         $this->fields->sortFields();
+        $this->addActions();
         parent::__construct($a_parent_obj, $a_parent_cmd);
         $this->initToolbar();
-        $this->addActions();
 
+
+    }
+
+    /**
+     * @return bool
+     */
+    protected function initTableProperties()
+    {
+        $this->table_id = strtolower(get_class($this->active_record_list->getAR()). "_index");
+        /**
+         * @todo: TAX: This should not be necessary please fix srModelObjectTableGUI
+         */
+        $this->setId($this->table_id);
+        if(!$this->getTableTitle())
+        {
+            $this->setTableTitle($this->txt("view_".$this->getId()));
+        }
+        return true;
     }
 
     protected function customizeFields()
@@ -375,13 +391,6 @@ class arIndexTableGUI extends srModelObjectTableGUI
         $this->initTableData();
     }
 
-    /**
-     * @return bool
-     */
-    protected function initTableProperties()
-    {
-        return false;
-    }
 
 
     /**
@@ -569,6 +578,6 @@ class arIndexTableGUI extends srModelObjectTableGUI
      */
     protected function txt($txt, $plugin_txt = true)
     {
-        return $this->parent_gui->txt($txt, $plugin_txt);
+        return $this->parent_obj->txt($txt, $plugin_txt);
     }
 }
