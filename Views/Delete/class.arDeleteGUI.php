@@ -59,6 +59,7 @@ class arDeleteGUI {
 	}
 
 
+
 	protected function initGUI() {
 
 		include_once("Services/Utilities/classes/class.ilConfirmationTableGUI.php");
@@ -103,19 +104,30 @@ class arDeleteGUI {
 	}
 
 
-	protected function setMessage($message) {
+    /**
+     * @param $message
+     */
+    protected function setMessage($message) {
 		$this->message = $message;
 	}
 
 
-	public function getHTML() {
+    /**
+     * @return string
+     */
+    public function getHTML() {
 		ilUtil::sendQuestion($this->message);
 
 		return $this->gui->getHTML();
 	}
 
 
-	protected function txt($txt, $plugin_txt = true) {
+    /**
+     * @param $txt
+     * @param bool $plugin_txt
+     * @return string
+     */
+    protected function txt($txt, $plugin_txt = true) {
 		return $this->parent_gui->txt($txt, $plugin_txt);
 	}
 }

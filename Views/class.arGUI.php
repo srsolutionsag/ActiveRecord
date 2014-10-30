@@ -1,6 +1,8 @@
 <?php
 include_once("./Services/Component/classes/class.ilPluginConfigGUI.php");
-require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.ActiveRecordList.php');
+include_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.ActiveRecordList.php');
+include_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/class.arIndexTableGUI.php');
+include_once('./Services/UICore/classes/class.ilTemplate.php');
 
 /**
  * @author  Timon Amstutz <timon.amstutz@ilub.unibe.ch>
@@ -29,13 +31,27 @@ class arGUI {
 	 * @var ilPlugin
 	 */
 	protected $plugin_object = NULL;
-	/**
-	 * @param  $string
-	 */
-	protected $record_type;
 
+    /**
+     * @var string
+     */
+    protected $record_type = "";
 
-	public function __construct($record_type, ilPlugin $plugin_object = NULL) {
+    /**
+     * @var ActiveRecord
+     */
+    protected $ar;
+
+    /**
+     * @var string
+     */
+    protected $lng_prefix = "";
+
+    /**
+     * @param $record_type
+     * @param ilPlugin $plugin_object
+     */
+    public function __construct($record_type, ilPlugin $plugin_object = NULL) {
 		global $tpl, $ilCtrl, $ilAccess, $lng;
 
 		$this->lng = $lng;
@@ -59,75 +75,109 @@ class arGUI {
 		$this->$cmd();
 	}
 
-
-	/**
-	 * Configure screen
-	 */
 	function index() {
 		$index_table_gui_class = $this->record_type . "IndexTableGUI";
-		$table_gui = new $index_table_gui_class($this, "index", new ActiveRecordList($this->ar));
+        /**
+         * @var arIndexTableGUI $table_gui
+         */
+        $table_gui = new $index_table_gui_class($this, "index", new ActiveRecordList($this->ar));
 		$this->tpl->setContent($table_gui->getHTML());
 	}
 
+    function applyFilter()
+    {
+        $index_table_gui_class = $this->record_type . "IndexTableGUI";
+        /**
+         * @var arIndexTableGUI $table_gui
+         */
+        $table_gui             = new $index_table_gui_class($this, "index", new ActiveRecordList($this->ar));
+        $table_gui->applyFilter();
+        $this->index();
+    }
+
+    function resetFilter()
+    {
+        $index_table_gui_class = $this->record_type . "IndexTableGUI";
+        /**
+         * @var arIndexTableGUI $table_gui
+         */
+        $table_gui             = new $index_table_gui_class($this, "index", new ActiveRecordList($this->ar));
+        $table_gui->resetFilter();
+        $this->index();
+    }
 
 	/**
 	 * Configure screen
 	 */
 	function edit() {
 		$edit_gui_class = $this->record_type . "EditGUI";
-		$form = new $edit_gui_class($this, $this->ar->find($_GET['ar_id']));
-		$this->tpl->setContent($form->getHTML());
+        /**
+         * @var arEditGUI $edit_gui
+         */
+		$edit_gui = new $edit_gui_class($this, $this->ar->find($_GET['ar_id']));
+		$this->tpl->setContent($edit_gui->getHTML());
 	}
 
 
 	function add() {
 		$edit_gui_class = $this->record_type . "EditGUI";
-		$form = new $edit_gui_class($this, $this->ar);
-		$this->tpl->setContent($form->getHTML());
+        /**
+         * @var arEditGUI $edit_gui
+         */
+        $edit_gui = new $edit_gui_class($this, $this->ar);
+		$this->tpl->setContent($edit_gui->getHTML());
 	}
 
 
 	public function create() {
 		$edit_gui_class = $this->record_type . "EditGUI";
-		$form = new $edit_gui_class($this, $this->ar);
-		$this->save($form);
+        /**
+         * @var arEditGUI $edit_gui
+         */
+        $edit_gui = new $edit_gui_class($this, $this->ar);
+		$this->save($edit_gui);
 	}
 
 
 	public function update() {
 		$edit_gui_class = $this->record_type . "EditGUI";
-		$form = new $edit_gui_class($this, $this->ar->find($_GET['ar_id']));
-		$this->save($form);
+        /**
+         * @var arEditGUI $edit_gui
+         */
+        $edit_gui = new $edit_gui_class($this, $this->ar->find($_GET['ar_id']));
+		$this->save($edit_gui);
 	}
 
 
-	public function save(arEditGUI $form) {
-		if ($form->saveObject()) {
-			ilUtil::sendSuccess($this->plugin_object->txt('record_created'), true);
+    /**
+     * @param arEditGUI $edit_gui
+     */
+    public function save(arEditGUI $edit_gui) {
+		if ($edit_gui->saveObject()) {
+			ilUtil::sendSuccess($this->txt('record_created'), true);
 			$this->ctrl->redirect($this, "index");
 		} else {
-			$this->tpl->setContent($form->getHTML());
+			$this->tpl->setContent($edit_gui->getHTML());
 		}
 	}
 
-
-	/**
-	 * Configure screen
-	 */
 	function view() {
 		$display_gui_class = $this->record_type . "DisplayGUI";
+        /**
+         * @var arDisplayGUI $display_gui
+         */
 		$display_gui = new $display_gui_class($this, $this->ar->find($_GET['ar_id']));
 		$this->tpl->setContent($display_gui->getHtml());
 	}
 
 
-	/**
-	 * Configure screen
-	 */
 	function delete() {
 		$delete_gui_class = $this->record_type . "DeleteGUI";
-		$form = new $delete_gui_class($this, $this->ar->find($_GET['ar_id']));
-		$this->tpl->setContent($form->getHTML());
+        /**
+         * @var arDeleteGUI $delete_gui
+         */
+        $delete_gui = new $delete_gui_class($this, $this->ar->find($_GET['ar_id']));
+		$this->tpl->setContent($delete_gui->getHTML());
 	}
 
 
@@ -154,8 +204,12 @@ class arGUI {
 		return $this->lng_prefix;
 	}
 
-
-	public function txt($txt, $plugin_txt = true) {
+    /**
+     * @param $txt
+     * @param bool $plugin_txt
+     * @return string
+     */
+    public function txt($txt, $plugin_txt = true) {
 		if ($this->getLngPrefix() != "" && $plugin_txt) {
 			return $this->lng->txt($this->getLngPrefix() . "_" . $txt, $this->getLngPrefix());
 		} else {
@@ -163,5 +217,3 @@ class arGUI {
 		}
 	}
 }
-
-?>
