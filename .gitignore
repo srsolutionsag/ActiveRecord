@@ -4,3 +4,4 @@ vendor
 vendor/*
 composer.lock
 .svn/*
+class.ilPDO.php
