@@ -418,7 +418,7 @@ class arIndexTableGUI extends srModelObjectTableGUI
      */
     protected function setCtrlParametersForRow($a_set)
     {
-        $this->ctrl->setParameterByClass(get_class($this->parent_obj), 'ar_id', ($a_set[$this->ar_id_field_name]));
+        $this->ctrl->setParameterByClass(get_class($this->parent_obj), 'ar_id', self::domid_encode($a_set[$this->ar_id_field_name]));
     }
 
 
@@ -427,7 +427,7 @@ class arIndexTableGUI extends srModelObjectTableGUI
      */
     protected function parseRow($a_set)
     {
-        $this->tpl->setVariable('ID', $a_set[$this->ar_id_field_name]);
+        $this->tpl->setVariable('ID', self::domid_encode($a_set[$this->ar_id_field_name]));
 
         foreach ($a_set as $key => $value)
         {
@@ -476,7 +476,7 @@ class arIndexTableGUI extends srModelObjectTableGUI
         if (!empty($this->actions))
         {
             $alist = new ilAdvancedSelectionListGUI();
-            $alist->setId($a_set[$this->ar_id_field_name]);
+            $alist->setId(self::domid_encode($a_set[$this->ar_id_field_name]));
             $alist->setListTitle($this->txt('actions', false));
 
             foreach ($this->actions as $action)
@@ -492,7 +492,6 @@ class arIndexTableGUI extends srModelObjectTableGUI
                 }
 
             }
-
             $this->tpl->setVariable('ACTION', $alist->getHTML());
         }
     }
@@ -579,5 +578,45 @@ class arIndexTableGUI extends srModelObjectTableGUI
     protected function txt($txt, $plugin_txt = true)
     {
         return $this->parent_obj->txt($txt, $plugin_txt);
+    }
+
+    /**
+     * @param $id_to_encode
+     * @return mixed|null
+     * @description  Encode a string for use as a DOM id.
+     * Replaces non-alphanumeric characters with an underscore and the hex representation of the character code with letters in lowercase see: http://brightonart.co.uk/blogs/dom-id-encode-php-function
+     */
+    public static function domid_encode($id_to_encode){
+        $encoded_id = null;
+        if (!empty($id_to_encode)) {
+            $encoded_id = preg_replace_callback(
+                '/([^a-zA-Z0-9])/',
+                function($matches) {
+                    return "__idstart_" . strtolower(dechex(ord($matches[0])))."_idend__";
+                },
+                $id_to_encode
+            );
+        }
+        return $encoded_id;
+    }
+
+
+    /**
+     * @param $id_to_decode
+     * @return mixed
+     * @description  Decode a DOM id encoded by domid_encode().
+     */
+    public static function domid_decode($id_to_decode){
+        $decoded_id = "";
+        if (!empty($id_to_decode)) {
+            $decoded_id = preg_replace_callback(
+                '/__idstart_(.{2})_idend__/',
+                function($matches) {
+                    return chr(hexdec($matches[1]));
+                },
+                $id_to_decode
+            );
+        }
+        return $decoded_id;
     }
 }

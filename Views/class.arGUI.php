@@ -72,7 +72,17 @@ class arGUI {
 
 	function executeCommand() {
 		$cmd = $this->ctrl->getCmd();
-		$this->$cmd();
+        switch($cmd){
+            case "edit":
+            case "update":
+            case "view":
+            case "delete":
+            case "deleteItem":
+                $this->$cmd(arIndexTableGUI::domid_decode($_GET['ar_id']));
+                break;
+            default:
+                $this->$cmd();
+        }
 	}
 
 	function index() {
@@ -109,12 +119,12 @@ class arGUI {
 	/**
 	 * Configure screen
 	 */
-	function edit() {
+	function edit($id) {
 		$edit_gui_class = $this->record_type . "EditGUI";
         /**
          * @var arEditGUI $edit_gui
          */
-		$edit_gui = new $edit_gui_class($this, $this->ar->find($_GET['ar_id']));
+		$edit_gui = new $edit_gui_class($this, $this->ar->find($id));
 		$this->tpl->setContent($edit_gui->getHTML());
 	}
 
@@ -139,12 +149,15 @@ class arGUI {
 	}
 
 
-	public function update() {
+    /**
+     * @param $id
+     */
+    public function update($id) {
 		$edit_gui_class = $this->record_type . "EditGUI";
         /**
          * @var arEditGUI $edit_gui
          */
-        $edit_gui = new $edit_gui_class($this, $this->ar->find($_GET['ar_id']));
+        $edit_gui = new $edit_gui_class($this, $this->ar->find($id));
 		$this->save($edit_gui);
 	}
 
@@ -161,28 +174,35 @@ class arGUI {
 		}
 	}
 
-	function view() {
+    /**
+     * @param $id
+     */
+    function view($id) {
 		$display_gui_class = $this->record_type . "DisplayGUI";
         /**
          * @var arDisplayGUI $display_gui
          */
-		$display_gui = new $display_gui_class($this, $this->ar->find($_GET['ar_id']));
+		$display_gui = new $display_gui_class($this, $this->ar->find($id));
 		$this->tpl->setContent($display_gui->getHtml());
 	}
 
-
-	function delete() {
+    /**
+     * @param $id
+     */
+    function delete($id) {
 		$delete_gui_class = $this->record_type . "DeleteGUI";
         /**
          * @var arDeleteGUI $delete_gui
          */
-        $delete_gui = new $delete_gui_class($this, $this->ar->find($_GET['ar_id']));
+        $delete_gui = new $delete_gui_class($this, $this->ar->find($id));
 		$this->tpl->setContent($delete_gui->getHTML());
 	}
 
-
-	function deleteItem() {
-		$record = $this->ar->find($_GET['ar_id']);
+    /**
+     * @param $id
+     */
+    function deleteItem($id) {
+		$record = $this->ar->find($id);
 		$record->delete();
 		ilUtil::sendSuccess("object_deleted");
 		$this->ctrl->redirect($this, "index");
