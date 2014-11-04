@@ -244,7 +244,7 @@ class arIndexTableGUI extends ilTable2GUI
                 if($field->getLength() == 1){
                     include_once("./Services/Form/classes/class.ilCheckboxInputGUI.php");
                     $item = new ilCheckboxInputGUI($this->txt($field->getTxt()), $field->getName());
-                    $this->addFilterItem($item);
+                    $this->addFilterItemToForm($item);
                     return;
                 }
                 $this->addFilterItemByMetaType($field->getName(),self::FILTER_NUMBER_RANGE,false,$this->txt($field->getTxt()));
@@ -264,6 +264,19 @@ class arIndexTableGUI extends ilTable2GUI
                 $this->addFilterItemByMetaType($field->getName(),self::FILTER_DATETIME_RANGE,false,$this->txt($field->getTxt()));
                 break;
         }
+    }
+
+    /**
+     * @param ilFormPropertyGUI $item
+     * @param bool $optional
+     */
+    protected function addFilterItemToForm(ilFormPropertyGUI $item, $optional = false) {
+        /**
+         * @var $item ilFormPropertyGUI
+         */
+        $this->addFilterItem($item, $optional);
+        $item->readFromSession();
+        $this->filter_array[$item->getPostVar()] = $item->getValue();
     }
 
     protected function initRowSelector(){
