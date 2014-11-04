@@ -1,7 +1,7 @@
 <?php
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/class.arViewField.php');
 /**
- * GUI-Class arViewField
+ * GUI-Class arIndexTableField
  *
  * @author  Timon Amstutz <timon.amstutz@ilub.unibe.ch>
  * @version 2.0.6
@@ -17,6 +17,11 @@ class arIndexTableField extends arViewField
      * @var bool
      */
     protected $sortable = false;
+
+    /**
+     * @var bool
+     */
+    protected $visible_default = false;
 
     /**
      * @param string $name
@@ -66,5 +71,24 @@ class arIndexTableField extends arViewField
         return $this->sortable;
     }
 
+    /**
+     * @param boolean $visible_default
+     */
+    public function setVisibleDefault($visible_default)
+    {
+        if($visible_default)
+        {
+            $this->setVisible(true);
+        }
+        $this->visible_default = $visible_default;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getVisibleDefault()
+    {
+        return $this->visible_default;
+    }
 
 }

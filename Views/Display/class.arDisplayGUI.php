@@ -67,75 +67,31 @@ class arDisplayGUI{
             $title = strtolower(str_replace("Record", "", get_class($ar)));
         }
         $this->setTitle($this->txt($title));
-        $this->setFields(new arDisplayFields($ar));
+
         $this->init();
 	}
 
     protected function init(){
-
-        $this->customizeFields();
-        $this->fields->sortFields();
-
-        $this->setBackButtonName($this->txt("back", false));
-        $this->setBackButtonTarget($this->ctrl->getLinkTarget($this->parent_gui, "index"));
-
+        $this->initFields();
+        $this->initBackButton();
         $this->ctrl->saveParameter($parent_gui, 'ar_id');
     }
 
+    protected function initFields(){
+        $this->fields = new arDisplayFields($this->ar);
+        $this->customizeFields();
+        $this->fields->sortFields();
+    }
 
     public function customizeFields()
     {
-
     }
 
-    /**
-     * @param arDisplayFields $fields
-     * @return mixed
-     */
-    function setFields(arDisplayFields $fields){
-        $this->fields = $fields;
+    public function initBackButton(){
+        $this->setBackButtonName($this->txt("back", false));
+        $this->setBackButtonTarget($this->ctrl->getLinkTarget($this->parent_gui, "index"));
     }
 
-    /**
-     * @return arDisplayFields
-     */
-    public function getFields()
-    {
-        return $this->fields->getFields();
-    }
-
-    /**
-     * @param $field_name
-     * @return arDisplayField
-     */
-    public function getField($field_name)
-    {
-        return $this->fields->getField($field_name);
-    }
-
-
-    /**
-     * @param arDisplayField
-     */
-    public function addField(arDisplayField $field)
-    {
-        $this->fields->addField($field);
-    }
-
-	/**
-	 * @param string $title
-	 */
-	public function setTitle($title) {
-		$this->title = $title;
-	}
-
-
-	/**
-	 * @return string
-	 */
-	public function getTitle() {
-		return $this->title;
-	}
 
     /**
      * @return string
@@ -291,6 +247,54 @@ class arDisplayGUI{
 		return $this->back_button_target;
 	}
 
+    /**
+     * @param arDisplayFields $fields
+     * @return mixed
+     */
+    function setFields(arDisplayFields $fields){
+        $this->fields = $fields;
+    }
+
+    /**
+     * @return arDisplayFields
+     */
+    public function getFields()
+    {
+        return $this->fields->getFields();
+    }
+
+    /**
+     * @param $field_name
+     * @return arDisplayField
+     */
+    public function getField($field_name)
+    {
+        return $this->fields->getField($field_name);
+    }
+
+
+    /**
+     * @param arDisplayField
+     */
+    public function addField(arDisplayField $field)
+    {
+        $this->fields->addField($field);
+    }
+
+    /**
+     * @param string $title
+     */
+    public function setTitle($title) {
+        $this->title = $title;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getTitle() {
+        return $this->title;
+    }
 
     /**
      * @param $txt

@@ -43,9 +43,10 @@ class arEditGUI extends ilPropertyFormGUI {
 		$this->parent_gui = $parent_gui;
 		$this->ctrl = $ilCtrl;
 		$this->ctrl->saveParameter($parent_gui, 'ar_id');
+        $this->ar_id_field_name   = arFieldCache::getPrimaryFieldName($this->ar);
 		$this->initFieldsToHide();
 		$this->initForm();
-		if ($this->ar->getId() != 0) {
+		if ($this->ar->getPrimaryFieldValue() != 0) {
 			$this->fillForm();
 		}
 	}
@@ -174,7 +175,7 @@ class arEditGUI extends ilPropertyFormGUI {
 
 
 	protected function setFormName() {
-		if ($this->ar->getId() == 0) {
+		if ($this->ar->getPrimaryFieldValue()  == 0) {
 			$this->setTitle($this->txt('create_' . $this->form_name));
 		} else {
 			$this->setTitle($this->txt('edit_' . $this->form_name));
@@ -222,7 +223,7 @@ class arEditGUI extends ilPropertyFormGUI {
 
 			if ($field->getName() == 'id') {
 				$valid = true;
-			} elseif ($field->getName() == 'created' && $this->ar->getId() == 0) {
+			} elseif ($field->getName() == 'created' && $this->ar->getPrimaryFieldValue()  == 0) {
 				$datetime = new ilDateTime(time(), IL_CAL_UNIX);
 				$this->ar->setCreated($datetime->get(IL_CAL_DATETIME));
 				$valid = true;
@@ -339,7 +340,7 @@ class arEditGUI extends ilPropertyFormGUI {
 		if (! $this->setRecordFields()) {
 			return false;
 		}
-		if ($this->ar->getId()) {
+		if ($this->ar->getPrimaryFieldValue() != 0) {
 			$this->ar->update();
 		} else {
 			$this->ar->create();
@@ -350,7 +351,7 @@ class arEditGUI extends ilPropertyFormGUI {
 
 
 	protected function addCommandButtons() {
-		if ($this->ar->getId() == 0) {
+		if ($this->ar->getPrimaryFieldValue()  == 0) {
 			$this->addCommandButton('create', $this->txt('create', false));
 		} else {
 			$this->addCommandButton('update', $this->txt('save', false));

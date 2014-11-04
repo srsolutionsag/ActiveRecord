@@ -77,20 +77,29 @@ class arGUI {
             case "update":
             case "view":
             case "delete":
-            case "deleteItem":
                 $this->$cmd(arIndexTableGUI::domid_decode($_GET['ar_id']));
+                break;
+            case "multiAction":
+                $action_name = $_POST["index_table_multi_action"];
+                $this->multiAction($action_name);
                 break;
             default:
                 $this->$cmd();
+                break;
         }
 	}
 
-	function index() {
-		$index_table_gui_class = $this->record_type . "IndexTableGUI";
-        /**
-         * @var arIndexTableGUI $table_gui
-         */
-        $table_gui = new $index_table_gui_class($this, "index", new ActiveRecordList($this->ar));
+    /**
+     * @param arIndexTableGUI $table_gui
+     */
+    function index(arIndexTableGUI $table_gui = null) {
+        if(!$table_gui){
+            $index_table_gui_class = $this->record_type . "IndexTableGUI";
+            /**
+             * @var arIndexTableGUI $table_gui
+             */
+            $table_gui = new $index_table_gui_class($this, "index", new ActiveRecordList($this->ar));
+        }
 		$this->tpl->setContent($table_gui->getHTML());
 	}
 
@@ -114,6 +123,42 @@ class arGUI {
         $table_gui             = new $index_table_gui_class($this, "index", new ActiveRecordList($this->ar));
         $table_gui->resetFilter();
         $this->index();
+    }
+
+    /**
+     * @param string $action_name
+     */
+    function multiAction($action_name = "")
+    {
+        $ids = array();
+        if($_POST['id']){
+            foreach($_POST['id'] as $id){
+                $ids[] = arIndexTableGUI::domid_decode($id);
+            }
+        }
+
+        if(empty($ids)){
+            ilUtil::sendFailure($this->txt("no_checkbox",false),true);
+            $this->ctrl->redirect($this, "index");
+        }
+
+        switch($action_name)
+        {
+            case "delete":
+                $this->deleteMultiple($ids);
+                break;
+            default:
+                $this->customMultiAction($action_name, $ids);
+                break;
+        }
+    }
+
+    /**
+     * @param string $action_name
+     * @param null $ids
+     */
+    function customMultiAction($action_name = "",$ids = null){
+
     }
 
 	/**
@@ -190,22 +235,31 @@ class arGUI {
      * @param $id
      */
     function delete($id) {
-		$delete_gui_class = $this->record_type . "DeleteGUI";
-        /**
-         * @var arDeleteGUI $delete_gui
-         */
-        $delete_gui = new $delete_gui_class($this, $this->ar->find($id));
-		$this->tpl->setContent($delete_gui->getHTML());
+		$this->deleteMultiple(array($id));
 	}
 
     /**
-     * @param $id
+     * @param $ids[]
      */
-    function deleteItem($id) {
-		$record = $this->ar->find($id);
-		$record->delete();
-		ilUtil::sendSuccess("object_deleted");
-		$this->ctrl->redirect($this, "index");
+    function deleteMultiple($ids =null) {
+        $delete_gui_class = $this->record_type . "DeleteGUI";
+        /**
+         * @var arDeleteGUI $delete_gui
+         */
+        $delete_gui = new $delete_gui_class($this, "delete", new ActiveRecordList($this->ar),"delete",$ids);
+        ilUtil::sendQuestion($this->txt("delete_items_confirmation"),true);
+        $this->tpl->setContent($delete_gui->getHTML());
+    }
+
+    function deleteItems() {
+        $nr_ids = $_POST['nr_ids'];
+        for($i = 0; $i<$nr_ids; $i++){
+            $id = $_POST['delete_id_'.$i];
+            $record = $this->ar->find($id);
+            $record->delete();
+        }
+        ilUtil::sendSuccess($this->txt("items_deleted"),true);
+        $this->ctrl->redirect($this, "index");
 	}
 
 

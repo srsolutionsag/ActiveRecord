@@ -3,6 +3,8 @@ require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.srModelO
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/class.ActiveRecordList.php');
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/class.arIndexTableField.php');
 require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/class.arIndexTableFields.php');
+require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/class.arIndexTableAction.php');
+require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/class.arIndexTableActions.php');
 
 /**
  * GUI-Class arIndexTableGUI
@@ -11,12 +13,28 @@ require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/Index/cl
  * @version 2.0.6
  *
  */
-class arIndexTableGUI extends srModelObjectTableGUI
+class arIndexTableGUI extends ilTable2GUI
 {
     /**
-     * @var array
+     * @var ilCtrl
      */
-    protected $actions = array();
+    protected $ctrl;
+    /**
+     * @var ilTabsGUI
+     */
+    protected $tabs;
+    /**
+     * @var ilAccessHandler
+     */
+    protected $access;
+    /**
+     * @var arIndexTableActions
+     */
+    protected $actions;
+    /**
+     * @var arIndexTableActions
+     */
+    protected $multi_item_actions = array();
     /**
      * @var ilToolbarGUI
      */
@@ -27,7 +45,7 @@ class arIndexTableGUI extends srModelObjectTableGUI
     protected $table_title = '';
 
     /**
-     * arViewFields
+     * arIndexTableFields
      */
     protected $fields = null;
 
@@ -37,6 +55,11 @@ class arIndexTableGUI extends srModelObjectTableGUI
     protected $active_record_list = null;
 
     /**
+     * @var arGUI|null
+     */
+    protected $parent_obj = null;
+
+    /**
      * @param arGUI $a_parent_obj
      * @param string $a_parent_cmd
      * @param ActiveRecordList $active_record_list
@@ -44,135 +67,260 @@ class arIndexTableGUI extends srModelObjectTableGUI
      */
     public function __construct(arGUI $a_parent_obj, $a_parent_cmd, ActiveRecordList $active_record_list,$custom_title = null)
     {
-        $this->active_record_list = $active_record_list;
+        global $ilCtrl, $ilTabs, $ilAccess;
+        $this->ctrl = $ilCtrl;
+        $this->tabs = $ilTabs;
+        $this->access = $ilAccess;
 
         $this->parent_obj         = $a_parent_obj;
+
+        $this->active_record_list = $active_record_list;
         $this->ar_id_field_name   = arFieldCache::getPrimaryFieldName($this->active_record_list->getAR());
 
+        $this->setId(strtolower(get_class($this->active_record_list->getAR()). "_index"));
         if($custom_title)
         {
             $this->setTableTitle($this->txt($custom_title));
+        }else
+        {
+            $this->setTableTitle($this->getId());
         }
 
-        $this->fields = new arIndexTableFields($active_record_list->getAR());
+        $this->initBeforeParentConstructor();
+
+
+        parent::__construct($a_parent_obj, $a_parent_cmd);
+
+        $this->initAfterParentConstructor();
+    }
+
+    protected function initFields(){
+        $this->fields = new arIndexTableFields($this->active_record_list->getAR());
         $this->customizeFields();
         $this->fields->sortFields();
-        $this->addActions();
-        parent::__construct($a_parent_obj, $a_parent_cmd);
+    }
+
+    /**
+     * @description To be overridden
+     */
+    protected function customizeFields(){
+    }
+
+    protected function initBeforeParentConstructor(){
+        $this->initFields();
+        $this->initActions();
+        $this->initMultiItemActions();
+        $this->initMultiItemActionsButton();
+    }
+
+    protected function initAfterParentConstructor(){
+        $this->initFormAction();
+        $this->initCommandButtons();
         $this->initToolbar();
 
+        $this->initTableFilter();
+        $this->initRowSelector();
 
+        $this->initTableRowTemplate();
+        $this->initTableColumns();
+        $this->initTableData();
+    }
+
+    protected function initActions()
+    {
+        global $lng;
+
+        $this->addAction(new arIndexTableAction('view', $lng->txt('view'), get_class($this->parent_obj), 'view', 'view'));
+        $this->addAction(new arIndexTableAction('edit', $lng->txt('edit'), get_class($this->parent_obj), 'edit', 'write'));
+        $this->addAction(new arIndexTableAction('delete', $lng->txt('delete'), get_class($this->parent_obj), 'delete', 'write'));
+    }
+
+
+    /**
+     * @param arIndexTableAction $action
+     */
+    public function addAction(arIndexTableAction $action)
+    {
+        if(!$this->getActions())
+        {
+            $this->setActions(new arIndexTableActions());
+        }
+        $this->actions->addAction($action);
+    }
+
+    protected function initFormAction(){
+        $this->setFormAction($this->ctrl->getFormAction($this->parent_obj));
+    }
+
+    protected function initCommandButtons(){
+
+    }
+
+    protected function initToolbar()
+    {
+        if($this->getActions() && $this->getActions()->getAction("edit"))
+        {
+            $toolbar = new ilToolbarGUI();
+            $toolbar->addButton($this->txt("add_item"), $this->ctrl->getLinkTarget($this->parent_obj, "add"));
+            $this->setToolbar($toolbar);
+        }
+    }
+
+    protected function initMultiItemActions()
+    {
+        global $lng;
+
+        if($this->getActions() && $this->getActions()->getAction("delete"))
+        {
+            $this->addMutliItemAction(new arIndexTableAction('delete', $lng->txt('delete'), get_class($this->parent_obj), 'delete'));
+        }
+    }
+
+    /**
+     * @param arIndexTableAction $action
+     */
+    public function addMutliItemAction(arIndexTableAction $action)
+    {
+        if(!$this->getMultiItemActions())
+        {
+            $this->setMultiItemActions(new arIndexTableActions());
+        }
+        $this->multi_item_actions->addAction($action);
+    }
+
+    protected function initMultiItemActionsButton()
+    {
+        if($this->getMultiItemActions())
+        {
+            $this->addMultiItemSelectionButton("index_table_multi_action",$this->multi_item_actions->getActionsAsKeyTextArray($this),"multiAction",$this->txt('execute',false));
+            $this->setSelectAllCheckbox("id[]");
+        }
+    }
+
+    /**
+     * Get selectable columns
+     *
+     * @return		array
+     */
+    function getSelectableColumns()
+    {
+        return $this->getFields()->getSelectableColumns($this);
     }
 
     /**
      * @return bool
+     * @description returns false, if no filter is needed, otherwise implement filters
+     *
      */
-    protected function initTableProperties()
+    protected function initTableFilter()
     {
-        $this->table_id = strtolower(get_class($this->active_record_list->getAR()). "_index");
-        /**
-         * @todo: TAX: This should not be necessary please fix srModelObjectTableGUI
-         */
-        $this->setId($this->table_id);
-        if(!$this->getTableTitle())
+        $this->setFilterCols(7);
+        $this->setFilterCommand("applyFilter");
+        $this->setResetCommand("resetFilter");
+
+        $fields = $this->getFieldsAsArray();
+
+
+        foreach ($fields as $field)
         {
-            $this->setTableTitle($this->txt("view_".$this->getId()));
+            /**
+             * @var arIndexTableField $field
+             */
+            if ($field->getHasFilter())
+            {
+                $this->addFilterField($field);
+            }
         }
-        return true;
-    }
-
-    protected function customizeFields()
-    {
-
     }
 
     /**
-     * @param arIndexTableField $fields
-     * @return mixed
+     * @param arIndexTableField $field
      */
-    function setFields(arIndexTableField $fields){
-        $this->fields = $fields;
+    protected function addFilterField(arIndexTableField $field)
+    {
+        switch ($field->getFieldType())
+        {
+            case 'integer':
+                if($field->getLength() == 1){
+                    include_once("./Services/Form/classes/class.ilCheckboxInputGUI.php");
+                    $item = new ilCheckboxInputGUI($this->txt($field->getTxt()), $field->getName());
+                    $this->addFilterItem($item);
+                    return;
+                }
+                $this->addFilterItemByMetaType($field->getName(),self::FILTER_NUMBER_RANGE,false,$this->txt($field->getTxt()));
+                break;
+            case 'float':
+                $this->addFilterItemByMetaType($field->getName(),self::FILTER_NUMBER_RANGE,false,$this->txt($field->getTxt()));
+                break;
+            case 'text':
+            case 'clob':
+                $this->addFilterItemByMetaType($field->getName(),self::FILTER_TEXT,false,$this->txt($field->getTxt()));
+                break;
+            case 'date':
+                $this->addFilterItemByMetaType($field->getName(),self::FILTER_DATE_RANGE,false,$this->txt($field->getTxt()));
+                break;
+            case 'time':
+            case 'timestamp':
+                $this->addFilterItemByMetaType($field->getName(),self::FILTER_DATETIME_RANGE,false,$this->txt($field->getTxt()));
+                break;
+        }
+    }
+
+    protected function initRowSelector(){
+        $this->setShowRowsSelector(true);
     }
 
     /**
-     * @return arIndexTableFields
+     * @return bool
+     * @description returns false, if dynamic template is needed, otherwise implement your own template by $this->setRowTemplate($a_template, $a_template_dir = '')
      */
-    public function getFields()
+    protected function initTableRowTemplate()
     {
-        return $this->fields->getFields();
+        $this->setRowTemplate('tpl.record_row.html', './Customizing/global/plugins/Libraries/ActiveRecord/');
     }
 
     /**
-     * @param $field_name
-     * @return arIndexTableField
+     * @return bool|void
      */
-    public function getField($field_name)
+    protected function initTableColumns()
     {
-        return $this->fields->getField($field_name);
+        $this->addMultipleSelectionColumn();
+
+        foreach ($this->getFieldsAsArray() as $field)
+        {
+            /**
+             * @var arIndexTableField $field
+             */
+            if ($this->checkColumnVisibile($field))
+            {
+                if ($field->getSortable())
+                {
+                    $this->addColumn($this->txt($field->getTxt()), $field->getName());
+                } else
+                {
+                    $this->addColumn($this->txt($field->getTxt()));
+                }
+            }
+        }
+        if ($this->getActions()){
+            $this->addColumn($this->txt('actions', false));
+        }
     }
 
-
-    /**
-     * @param arIndexTableField
-     */
-    public function addField(arIndexTableField $field)
-    {
-        $this->fields->addField($field);
-    }
-
-
-
-    protected function addActions()
-    {
-        global $lng;
-
-        $this->addAction('view', $lng->txt('view'), get_class($this->parent_obj), 'view', 'view');
-        $this->addAction('edit', $lng->txt('edit'), get_class($this->parent_obj), 'edit', 'write');
-        $this->addAction('delete', $lng->txt('delete'), get_class($this->parent_obj), 'delete', 'write');
-    }
-
-
-    /**
-     * @param string $table_title
-     */
-    public function setTableTitle($table_title)
-    {
-        $this->table_title = $table_title;
-    }
-
-
-    /**
-     * @return string
-     */
-    public function getTableTitle()
-    {
-        return $this->table_title;
+    protected function addMultipleSelectionColumn(){
+        if($this->getMultiItemActions())
+        {
+            $this->addColumn("","",1);
+        }
     }
 
     /**
-     * @param \ilToolbarGUI $toolbar
+     * @param arIndexTableField $field
+     * @return bool
      */
-    public function setToolbar($toolbar)
-    {
-        $this->toolbar = $toolbar;
+    protected  function checkColumnVisibile(arIndexTableField $field){
+        return ($field->getVisible() && !$this->getSelectableColumns()) || $this->isColumnSelected($field->getName());
     }
-
-    /**
-     * @return \ilToolbarGUI
-     */
-    public function getToolbar()
-    {
-        return $this->toolbar;
-    }
-
-
-    protected function initToolbar()
-    {
-        $toolbar = new ilToolbarGUI();
-        $toolbar->addButton($this->txt("add_item"), $this->ctrl->getLinkTarget($this->parent_obj, "add"));
-        $this->setToolbar($toolbar);
-    }
-
 
     protected function initTableData()
     {
@@ -190,7 +338,7 @@ class arIndexTableGUI extends srModelObjectTableGUI
         foreach ($ar_data as $key => $item)
         {
             $data[$key] = array();
-            foreach ($this->fields->getFieldsForDisplay() as $field)
+            foreach ($this->getFields()->getFieldsForDisplay() as $field)
             {
                 /**
                  * @var arIndexTableField $field
@@ -214,25 +362,6 @@ class arIndexTableGUI extends srModelObjectTableGUI
         $this->setData($data);
     }
 
-
-    protected function beforeGetData(){
-    }
-
-    protected function setOrderAndSegmentation(){
-        $this->setExternalSorting(true);
-        $this->setExternalSegmentation(true);
-        if(!$this->getDefaultOrderField()){
-            $this->setDefaultOrderField($this->active_record_list->getAR()->getArFieldList()->getPrimaryField());
-        }
-        $this->determineLimit();
-        $this->determineOffsetAndOrder();
-        $this->setMaxCount($this->active_record_list->count());
-        $this->active_record_list->orderBy($this->getOrderField(), $this->getOrderDirection());
-        $this->active_record_list->limit($this->getOffset() , $this->getLimit());
-    }
-
-
-
     protected function filterTableData()
     {
         $filters = $this->getFilterItems();
@@ -243,9 +372,43 @@ class arIndexTableGUI extends srModelObjectTableGUI
                 /**
                  * @var ilFormPropertyGUI|ilTextInputGUI $filter
                  */
-                $this->addFilterWhere($filter->getInputType(), $filter->getPostVar(), $filter->getValue());
+                $this->addFilterWhere($filter, $filter->getPostVar(), $filter->getValue());
             }
         }
+    }
+
+    /**
+     * @param ilFormPropertyGUI $filter
+     * @param $name
+     * @param $value
+     */
+    protected function addFilterWhere(ilFormPropertyGUI $filter, $name, $value)
+    {
+        switch (get_class($filter))
+        {
+            case 'ilNumberInputGUI':
+                $this->active_record_list->where($name . " = '" . $value . "'");
+                break;
+            case 'ilTextInputGUI':
+                $this->active_record_list->where($this->active_record_list->getAR()->getConnectorContainerName() . "." . $name . " like '%" . $value . "%'");
+                break;
+        }
+    }
+
+    protected function beforeGetData(){
+    }
+
+    protected function setOrderAndSegmentation(){
+        $this->setExternalSorting(true);
+        $this->setExternalSegmentation(true);
+        if(!$this->getDefaultOrderField()){
+            $this->setDefaultOrderField($this->active_record_list->getAR()->getArFieldList()->getPrimaryField()->getName());
+        }
+        $this->determineLimit();
+        $this->determineOffsetAndOrder();
+        $this->setMaxCount($this->active_record_list->count());
+        $this->active_record_list->orderBy($this->getOrderField(), $this->getOrderDirection());
+        $this->active_record_list->limit($this->getOffset() , $this->getLimit());
     }
 
     /**
@@ -303,136 +466,45 @@ class arIndexTableGUI extends srModelObjectTableGUI
         return "CUSTOM-OVERRIDE: setCustomFieldData";
     }
 
-    /**
-     * @param $type
-     * @param $name
-     * @param $value
-     */
-    protected function addFilterWhere($type, $name, $value)
-    {
-        switch ($type)
-        {
-            case 'integer':
-            case 'float':
-                $this->active_record_list->where($name . " = '" . $value . "'");
-                break;
-            case 'text':
-            case 'clob':
-                $this->active_record_list->where($this->active_record_list->getAR()->getConnectorContainerName() . "." . $name . " like '%" . $value . "%'");
-                break;
-            case 'date':
-            case 'time':
-            case 'timestamp':
-                break;
-        }
-    }
 
 
     /**
-     * @return bool
-     * @description returns false, if no filter is needed, otherwise implement filters
+     * @param array $a_set
      *
+     * @internal    param array $_set
+     * @description override, when using own columns
      */
-    protected function initTableFilter()
-    {
-        $this->setFilterCommand("applyFilter");
-        $this->setResetCommand("resetFilter");
-
-        $fields = $this->getFields();
-
-
-        foreach ($fields as $field)
-        {
-            /**
-             * @var arIndexTableField $field
-             */
-            if ($field->getHasFilter())
-            {
-                $this->addFilterField($field);
-            }
-        }
-    }
-
-
-    /**
-     * @param arIndexTableField $field
-     */
-    protected function addFilterField(arIndexTableField $field)
-    {
-        switch ($field->getFieldType())
-        {
-            case 'integer':
-            case 'float':
-                $this->addFilterItemToForm(new ilNumberInputGUI($this->txt($field->getTxt()), $field->getName()));
-                break;
-            case 'text':
-            case 'clob':
-                include_once("./Services/Form/classes/class.ilTextInputGUI.php");
-                $this->addFilterItemToForm(new ilTextInputGUI($this->txt($field->getTxt()), $field->getName()));
-                break;
-            case 'date':
-            case 'time':
-            case 'timestamp':
-                break;
-        }
-    }
-
-    public function applyFilter()
-    {
-        $this->writeFilterToSession();
-        $this->resetOffset();
-        $this->initTableData();
-    }
-
-    public function resetFilter()
-    {
-        parent::resetFilter();
-        $this->resetOffset();
-        $this->initTableData();
-    }
-
-
-
-    /**
-     * @return bool
-     */
-    protected function initFormActionsAndCmdButtons()
-    {
-        return false;
-    }
-
-    /**
-     * @param $a_set
-     * @return bool|void
-     */
-    protected function fillTableRow($a_set)
-    {
+    final function fillRow($a_set) {
         $this->setCtrlParametersForRow($a_set);
+        $this->addMultiItemActionCheckboxToRow($a_set);
         $this->parseRow($a_set);
         $this->addActionsToRow($a_set);
     }
 
-
     /**
      * @param $a_set
      */
-    protected function setCtrlParametersForRow($a_set)
-    {
+    protected function setCtrlParametersForRow($a_set){
         $this->ctrl->setParameterByClass(get_class($this->parent_obj), 'ar_id', self::domid_encode($a_set[$this->ar_id_field_name]));
     }
 
+    /**
+     * @param $a_set
+     */
+    protected function addMultiItemActionCheckboxToRow($a_set){
+        if($this->getMultiItemActions()){
+            $this->tpl->setVariable('ID', self::domid_encode($a_set[$this->ar_id_field_name]));
+        }
+    }
 
     /**
      * @param $a_set
      */
-    protected function parseRow($a_set)
-    {
-        $this->tpl->setVariable('ID', self::domid_encode($a_set[$this->ar_id_field_name]));
-
+    protected function parseRow($a_set){
         foreach ($a_set as $key => $value)
         {
             $field = $this->getField($key);
-            if ($field->getVisible())
+            if ($this->checkColumnVisibile($field))
             {
                 $this->parseEntry($field, $value);
             }
@@ -443,28 +515,10 @@ class arIndexTableGUI extends srModelObjectTableGUI
      * @param arIndexTableField $field
      * @param mixed $value
      */
-    protected function parseEntry(arIndexTableField $field, $value)
-    {
+    protected function parseEntry(arIndexTableField $field, $value){
         $this->tpl->setCurrentBlock('entry');
         $this->tpl->setVariable('ENTRY_CONTENT', $value);
         $this->tpl->parseCurrentBlock('entry');
-    }
-
-    /**
-     * @param $id
-     * @param $title
-     * @param $target_class
-     * @param $target_cmd
-     * @param null $access
-     */
-    public function addAction($id, $title, $target_class, $target_cmd, $access = null)
-    {
-        $this->actions[$id]               = new stdClass();
-        $this->actions[$id]->id           = $id;
-        $this->actions[$id]->title        = $title;
-        $this->actions[$id]->target_class = $target_class;
-        $this->actions[$id]->target_cmd   = $target_cmd;
-        $this->actions[$id]->access       = $access;
     }
 
 
@@ -473,84 +527,31 @@ class arIndexTableGUI extends srModelObjectTableGUI
      */
     protected function addActionsToRow($a_set)
     {
-        if (!empty($this->actions))
+        if ($this->getActions())
         {
             $alist = new ilAdvancedSelectionListGUI();
             $alist->setId(self::domid_encode($a_set[$this->ar_id_field_name]));
             $alist->setListTitle($this->txt('actions', false));
 
-            foreach ($this->actions as $action)
+            foreach ($this->getActionsAsArray() as $action)
             {
+                /**
+                 * @var arIndexTableAction $action
+                 */
                 $access = true;
-                if ($action->access)
+                if ($action->getAccess())
                 {
-                    $access = $this->access->checkAccess($action->access, '', $_GET['ref_id']);
+                    $access = $this->access->checkAccess($action->getAccess(), '', $_GET['ref_id']);
                 }
                 if ($access)
                 {
-                    $alist->addItem($action->title, $action->id, $this->ctrl->getLinkTargetByClass($action->target_class, $action->target_cmd));
+                    $alist->addItem($action->getTitle(), $action->getId(), $this->ctrl->getLinkTargetByClass($action->getTargetClass(), $action->getTargetCmd()));
                 }
-
             }
+
             $this->tpl->setVariable('ACTION', $alist->getHTML());
         }
     }
-
-    /**
-     * @return bool|void
-     */
-    protected function initTableColumns()
-    {
-        if ($this->getData())
-        {
-            foreach (array_pop($this->getData()) as $key => $item)
-            {
-                if ($this->getField($key)->getVisible())
-                {
-                    if ($this->getField($key)->getSortable())
-                    {
-                        $this->addColumn($this->txt($this->getField($key)->getTxt()), $key);
-                    } else
-                    {
-                        $this->addColumn($this->txt($this->getField($key)->getTxt()));
-                    }
-                }
-            }
-            if (!empty($this->actions)){
-                $this->addColumn($this->txt('actions', false));
-            }
-        }
-    }
-
-    /**
-     * @return bool
-     * @description returns false if standard-table-header is needes, otherwise implement your header
-     */
-    protected function initTableHeader()
-    {
-        return false;
-    }
-
-
-    /**
-     * @return bool
-     * @description returns false, if dynamic template is needed, otherwise implement your own template by $this->setRowTemplate($a_template, $a_template_dir = '')
-     */
-    protected function initTableRowTemplate()
-    {
-        $this->setRowTemplate('tpl.record_row.html', './Customizing/global/plugins/Libraries/ActiveRecord/');
-    }
-
-
-    /**
-     * @return bool
-     * @description returns false, if global language is needed; implement your own language by setting $this->pl
-     */
-    protected function initLanguage()
-    {
-        return false;
-    }
-
 
     /**
      * @return string
@@ -575,9 +576,23 @@ class arIndexTableGUI extends srModelObjectTableGUI
      * @param bool $plugin_txt
      * @return string
      */
-    protected function txt($txt, $plugin_txt = true)
+    public function txt($txt, $plugin_txt = true)
     {
         return $this->parent_obj->txt($txt, $plugin_txt);
+    }
+
+    public function applyFilter()
+    {
+        $this->writeFilterToSession();
+        $this->resetOffset();
+        $this->initTableData();
+    }
+
+    public function resetFilter()
+    {
+        parent::resetFilter();
+        $this->resetOffset();
+        $this->initTableData();
     }
 
     /**
@@ -618,5 +633,131 @@ class arIndexTableGUI extends srModelObjectTableGUI
             );
         }
         return $decoded_id;
+    }
+
+
+    /**
+     * @param arIndexTableFields $fields
+     */
+    function setFields(arIndexTableFields $fields){
+        $this->fields = $fields;
+    }
+
+    /**
+     * @return arIndexTableFields
+     */
+    public function getFields()
+    {
+        return $this->fields;
+    }
+
+
+    /**
+     * @return arViewField[]
+     */
+    public function getFieldsAsArray()
+    {
+        return $this->getFields()->getFields();
+    }
+
+    /**
+     * @param $field_name
+     * @return arIndexTableField
+     */
+    public function getField($field_name)
+    {
+        return $this->getFields()->getField($field_name);
+    }
+
+
+    /**
+     * @param arIndexTableField
+     */
+    public function addField(arIndexTableField $field)
+    {
+        $this->getFields()->addField($field);
+    }
+
+    /**
+     * @param string $table_title
+     */
+    public function setTableTitle($table_title)
+    {
+        $this->table_title = $table_title;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getTableTitle()
+    {
+        return $this->table_title;
+    }
+
+    /**
+     * @param \ilToolbarGUI $toolbar
+     */
+    public function setToolbar($toolbar)
+    {
+        $this->toolbar = $toolbar;
+    }
+
+    /**
+     * @return \ilToolbarGUI
+     */
+    public function getToolbar()
+    {
+        return $this->toolbar;
+    }
+
+    /**
+     * @param \arIndexTableActions $actions
+     */
+    public function setActions($actions)
+    {
+        $this->actions = $actions;
+    }
+
+    /**
+     * @return \arIndexTableActions
+     */
+    public function getActions()
+    {
+        return $this->actions;
+    }
+
+    /**
+     * @return \arIndexTableAction[]
+     */
+    public function getActionsAsArray()
+    {
+        return $this->actions->getActions();
+    }
+
+
+    /**
+     * @param \arIndexTableActions $multi_item_actions
+     */
+    public function setMultiItemActions($multi_item_actions)
+    {
+        $this->multi_item_actions = $multi_item_actions;
+    }
+
+
+    /**
+     * @return \arIndexTableActions
+     */
+    public function getMultiItemActions()
+    {
+        return $this->multi_item_actions;
+    }
+
+    /**
+     * @return \arIndexTableActions
+     */
+    public function getMultiItemActionsAsArray()
+    {
+        return $this->multi_item_actions;
     }
 }

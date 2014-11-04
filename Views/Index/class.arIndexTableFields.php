@@ -11,4 +11,33 @@ require_once('./Customizing/global/plugins/Libraries/ActiveRecord/Views/class.ar
 class arIndexTableFields extends arViewFields
 {
     const FIELD_CLASS = 'arIndexTableField';
+
+    /**
+     * @var array
+     */
+    protected $selectable_columns = array();
+
+    /**
+     * Get selectable columns
+     * @param       arIndexTableGUI used as translating instance
+     * @return		array
+     */
+    function getSelectableColumns(arIndexTableGUI $translator)
+    {
+        if(empty($this->selectable_columns))
+        {
+            foreach ($this->getFields() as $field)
+            {
+                /**
+                 * @var arIndexTableField $field
+                 */
+                if ($field->getVisible())
+                {
+                    $this->selectable_columns[$field->getName()] = array("txt"=> $translator->txt($field->getTxt()),"default"=>$field->getVisibleDefault());
+                }
+            }
+        }
+
+        return $this->selectable_columns;
+    }
 }

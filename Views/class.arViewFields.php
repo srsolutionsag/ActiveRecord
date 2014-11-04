@@ -72,6 +72,13 @@ class arViewFields
     }
 
     /**
+     * @return arViewField
+     */
+    public function getPrimaryField(){
+        return $this->getField(arFieldCache::getPrimaryFieldName($this->active_record));
+    }
+
+    /**
      * @return bool
      */
     public function sortFields()
