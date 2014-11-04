@@ -212,14 +212,14 @@ class ActiveRecordList {
 	 * @param        $on_external
 	 * @param array  $fields
 	 * @param string $operator
-	 * @param        $both_external
+	 * @param bool   $both_external
 	 *
 	 * @return $this
 	 * @throws arException
 	 */
 
-	protected function join($type = arJoin::TYPE_INNER, $tablename, $on_this, $on_external, $fields = array( '*' ), $operator = '=', $both_external) {
-		if (! $this->getAR()->getArFieldList()->isField($on_this)) {
+	protected function join($type = arJoin::TYPE_INNER, $tablename, $on_this, $on_external, $fields = array( '*' ), $operator = '=', $both_external = false) {
+		if (! $this->getAR()->getArFieldList()->isField($on_this) && !$both_external) {
 			throw new arException(arException::LIST_JOIN_ON_WRONG_FIELD, $on_this);
 		}
 		$full_names = false;
@@ -329,7 +329,10 @@ class ActiveRecordList {
 	}
 
 
-	public function debug() {
+    /**
+     * @return $this
+     */
+    public function debug() {
 		$this->loaded = false;
 		$this->debug = true;
 
