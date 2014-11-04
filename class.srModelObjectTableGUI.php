@@ -70,7 +70,7 @@ abstract class srModelObjectTableGUI extends ilTable2GUI {
 			$this->initStandardTableColumns();
 		}
 		if ($this->initTableRowTemplate() === false) {
-			$this->setRowTemplate('tpl.std_row_template.html', 'Customizing/global/plugins/Libraries/ActiveRecord');
+            $this->setRowTemplate('tpl.std_row_template.html', strstr(dirname(__FILE__), 'Customizing'));
 		}
 
 
