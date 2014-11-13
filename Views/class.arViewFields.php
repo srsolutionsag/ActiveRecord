@@ -28,6 +28,11 @@ class arViewFields
     protected $active_record = NULL;
 
     /**
+     * @var string
+     */
+    protected $txt_prefix = "";
+
+    /**
      * @param ActiveRecord $ar
      */
     public function __construct(ActiveRecord $ar)
@@ -98,7 +103,10 @@ class arViewFields
         {
             foreach ($this->getFields() as $field)
             {
-                if (($field->getVisible() || $field->getName() == arFieldCache::getPrimaryFieldName($this->active_record)))
+                /**
+                 * @var $field arViewField
+                 */
+                if (($field->getVisible() || $field->getPrimary()))
                 {
                     $this->fields_for_display[] = $field;
                 }
@@ -114,5 +122,25 @@ class arViewFields
     public function getField($field_name)
     {
         return $this->fields[$field_name];
+    }
+
+    /**
+     * @param string $txt_prefix
+     */
+    public function setTxtPrefix($txt_prefix)
+    {
+        $this->txt_prefix = $txt_prefix;
+        foreach ($this->getFields() as $field)
+        {
+            $field->setTxtPrefix($txt_prefix);
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function getTxtPrefix()
+    {
+        return $this->txt_prefix;
     }
 }

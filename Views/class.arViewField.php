@@ -13,6 +13,10 @@ class arViewField extends arField
     /**
      * @var string
      */
+    protected $txt_prefix = "";
+    /**
+     * @var string
+     */
     protected $txt = "";
     /**
      * @var int
@@ -26,6 +30,14 @@ class arViewField extends arField
      * @var bool
      */
     protected $custom_field = false;
+    /**
+     * @var string
+     */
+    protected $get_function_name = "";
+    /**
+     * @var string
+     */
+    protected $set_function_name = "";
 
 
     /**
@@ -42,6 +54,10 @@ class arViewField extends arField
         $this->txt      = $txt;
         $this->visible  = $visible;
         $this->custom_field = $custom_field;
+
+        $camel_case = ActiveRecord::_toCamelCase($this->getName(), true);
+        $this->get_function_name = "get".$camel_case;
+        $this->set_function_name = "set".$camel_case;
     }
 
     /**
@@ -75,9 +91,9 @@ class arViewField extends arField
     {
         if($this->txt)
         {
-            return $this->txt;
+            return $this->getTxtPrefix().$this->txt;
         }
-        return $this->getName();
+        return $this->getTxtPrefix().$this->getName();
 
     }
 
@@ -111,6 +127,54 @@ class arViewField extends arField
     public function getCustomField()
     {
         return $this->custom_field;
+    }
+
+    /**
+     * @param array $allowed_attributes
+     */
+    public static function setAllowedAttributes($allowed_attributes)
+    {
+        self::$allowed_attributes = $allowed_attributes;
+    }
+
+    /**
+     * @return array
+     */
+    public static function getAllowedAttributes()
+    {
+        return self::$allowed_attributes;
+    }
+
+    /**
+     * @param string $txt_prefix
+     */
+    public function setTxtPrefix($txt_prefix)
+    {
+        $this->txt_prefix = $txt_prefix;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTxtPrefix()
+    {
+        return $this->txt_prefix;
+    }
+
+    /**
+     * @return string
+     */
+    public function getGetFunctionName()
+    {
+        return $this->get_function_name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSetFunctionName()
+    {
+        return $this->set_function_name;
     }
 
 

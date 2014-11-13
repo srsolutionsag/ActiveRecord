@@ -63,9 +63,8 @@ class arIndexTableGUI extends ilTable2GUI
      * @param arGUI $a_parent_obj
      * @param string $a_parent_cmd
      * @param ActiveRecordList $active_record_list
-     * @param null $custom_title
      */
-    public function __construct(arGUI $a_parent_obj, $a_parent_cmd, ActiveRecordList $active_record_list,$custom_title = null)
+    public function __construct(arGUI $a_parent_obj, $a_parent_cmd, ActiveRecordList $active_record_list)
     {
         global $ilCtrl, $ilTabs, $ilAccess;
         $this->ctrl = $ilCtrl;
@@ -75,16 +74,8 @@ class arIndexTableGUI extends ilTable2GUI
         $this->parent_obj         = $a_parent_obj;
 
         $this->active_record_list = $active_record_list;
-        $this->ar_id_field_name   = arFieldCache::getPrimaryFieldName($this->active_record_list->getAR());
 
         $this->setId(strtolower(get_class($this->active_record_list->getAR()). "_index"));
-        if($custom_title)
-        {
-            $this->setTableTitle($this->txt($custom_title));
-        }else
-        {
-            $this->setTableTitle($this->getId());
-        }
 
         $this->initBeforeParentConstructor();
 
@@ -94,24 +85,14 @@ class arIndexTableGUI extends ilTable2GUI
         $this->initAfterParentConstructor();
     }
 
-    protected function initFields(){
-        $this->fields = new arIndexTableFields($this->active_record_list->getAR());
-        $this->customizeFields();
-        $this->fields->sortFields();
-    }
-
-    /**
-     * @description To be overridden
-     */
-    protected function customizeFields(){
-    }
-
     protected function initBeforeParentConstructor(){
         $this->initFields();
         $this->initActions();
         $this->initMultiItemActions();
         $this->initMultiItemActionsButton();
     }
+
+
 
     protected function initAfterParentConstructor(){
         $this->initFormAction();
@@ -124,6 +105,22 @@ class arIndexTableGUI extends ilTable2GUI
         $this->initTableRowTemplate();
         $this->initTableColumns();
         $this->initTableData();
+    }
+
+    protected function initTitle(){
+        $this->setTableTitle($this->getId());
+    }
+
+    protected function initFields(){
+        $this->fields = new arIndexTableFields($this->active_record_list->getAR());
+        $this->customizeFields();
+        $this->fields->sortFields();
+    }
+
+    /**
+     * @description To be overridden
+     */
+    protected function customizeFields(){
     }
 
     protected function initActions()
@@ -139,7 +136,7 @@ class arIndexTableGUI extends ilTable2GUI
     /**
      * @param arIndexTableAction $action
      */
-    public function addAction(arIndexTableAction $action)
+    protected function addAction(arIndexTableAction $action)
     {
         if(!$this->getActions())
         {
@@ -168,11 +165,9 @@ class arIndexTableGUI extends ilTable2GUI
 
     protected function initMultiItemActions()
     {
-        global $lng;
-
         if($this->getActions() && $this->getActions()->getAction("delete"))
         {
-            $this->addMutliItemAction(new arIndexTableAction('delete', $lng->txt('delete'), get_class($this->parent_obj), 'delete'));
+            $this->addMutliItemAction(new arIndexTableAction('delete', 'delete', get_class($this->parent_obj), 'delete'));
         }
     }
 
@@ -202,14 +197,12 @@ class arIndexTableGUI extends ilTable2GUI
      *
      * @return		array
      */
-    function getSelectableColumns()
+    public function getSelectableColumns()
     {
         return $this->getFields()->getSelectableColumns($this);
     }
 
     /**
-     * @return bool
-     * @description returns false, if no filter is needed, otherwise implement filters
      *
      */
     protected function initTableFilter()
@@ -241,14 +234,6 @@ class arIndexTableGUI extends ilTable2GUI
         switch ($field->getFieldType())
         {
             case 'integer':
-                if($field->getLength() == 1){
-                    include_once("./Services/Form/classes/class.ilCheckboxInputGUI.php");
-                    $item = new ilCheckboxInputGUI($this->txt($field->getTxt()), $field->getName());
-                    $this->addFilterItemToForm($item);
-                    return;
-                }
-                $this->addFilterItemByMetaType($field->getName(),self::FILTER_NUMBER_RANGE,false,$this->txt($field->getTxt()));
-                break;
             case 'float':
                 $this->addFilterItemByMetaType($field->getName(),self::FILTER_NUMBER_RANGE,false,$this->txt($field->getTxt()));
                 break;
@@ -397,15 +382,105 @@ class arIndexTableGUI extends ilTable2GUI
      */
     protected function addFilterWhere(ilFormPropertyGUI $filter, $name, $value)
     {
+
         switch (get_class($filter))
         {
-            case 'ilNumberInputGUI':
-                $this->active_record_list->where($name . " = '" . $value . "'");
-                break;
             case 'ilTextInputGUI':
-                $this->active_record_list->where($this->active_record_list->getAR()->getConnectorContainerName() . "." . $name . " like '%" . $value . "%'");
+                $this->addFilterTextWhere($filter, $name, $value);
+                return;
+            case 'ilCombinationInputGUI':
+                if(is_object($value["from"]) || is_object($value["to"]))
+                {
+                    if (get_class($value["from"]) == "ilDateTime" || get_class($value["to"]) == "ilDateTime")
+                    {
+                        $this->addFilterDateTimeWhere($filter, $name, $value);
+                        return;
+                    }
+                    if (get_class($value["from"]) == "ilDate" || get_class($value["to"]) == "ilDate")
+                    {
+                        $this->addFilterDateWhere($filter, $name, $value);
+                        return;
+                    }
+                    $this->addFilterCustomWhere($filter, $name, $value);
+                    return;
+                }
+
+                $this->addFilterNumericWhere($filter, $name, $value);
                 break;
+            default:
+                $this->addFilterCustomWhere($filter, $name, $value);
+                return;
+
         }
+    }
+
+    /**
+     * @param ilCombinationInputGUI $filter
+     * @param $name
+     * @param $value
+     */
+    protected function addFilterNumericWhere(ilCombinationInputGUI $filter, $name, $value){
+
+        if($value["from"] != "" OR $value["to"] != ""){
+            if($value["from"] == ""){
+                $value["from"] = 0;
+            }
+            if($value["to"] == ""){
+                $value["to"] = PHP_INT_MAX ;
+            }
+            $this->active_record_list->where($this->active_record_list->getAR()->getConnectorContainerName() . "." . $name . " >= " . $value["from"]." AND ".
+                $this->active_record_list->getAR()->getConnectorContainerName() . "." . $name . " <= ".$value["to"]);
+        }
+
+    }
+
+    /**
+     * @param ilTextInputGUI $filter
+     * @param $name
+     * @param $value
+     */
+    protected function addFilterTextWhere(ilTextInputGUI $filter, $name, $value){
+        $this->active_record_list->where($this->active_record_list->getAR()->getConnectorContainerName() . "." . $name . " like '%" . $value . "%'");
+    }
+
+    /**
+     * @param ilCombinationInputGUI $filter
+     * @param $name
+     * @param $value
+     */
+    protected function addFilterDateWhere(ilCombinationInputGUI $filter, $name, $value){
+        if($value["from"] != null OR $value["to"] != null){
+            if($value["from"] == null){
+                $value["from"] = new ilDateTime("0001-01-01",IL_CAL_DATE);
+            }
+            if($value["to"] == null){
+                $value["to"] = new ilDateTime("9999-01-01",IL_CAL_DATE);
+            }
+            $this->active_record_list->where($this->active_record_list->getAR()->getConnectorContainerName() . "." . $name . " BETWEEN '" . $value["from"]->get(IL_CAL_DATE)."' AND '".$value["to"]->get(IL_CAL_DATE)."'");
+        }
+
+    }
+
+    /**
+     * @param ilCombinationInputGUI $filter
+     * @param $name
+     * @param $value
+     */
+    protected function addFilterDateTimeWhere(ilCombinationInputGUI $filter, $name, $value){
+        if($value["from"] != null OR $value["to"] != null){
+            if($value["from"] == null){
+                $value["from"] = new ilDateTime("0001-01-01",IL_CAL_DATE);
+            }
+            if($value["to"] == null){
+                $value["to"] = new ilDateTime("9999-01-01",IL_CAL_DATE);
+            }
+            $this->active_record_list->where($this->active_record_list->getAR()->getConnectorContainerName() . "." . $name . " BETWEEN '" . $value["from"]->get(IL_CAL_DATETIME)."' AND '".$value["to"]->get(IL_CAL_DATETIME)."'");
+        }
+
+    }
+
+    protected function addFilterCustomWhere(){
+
     }
 
     protected function beforeGetData(){
@@ -498,7 +573,8 @@ class arIndexTableGUI extends ilTable2GUI
      * @param $a_set
      */
     protected function setCtrlParametersForRow($a_set){
-        $this->ctrl->setParameterByClass(get_class($this->parent_obj), 'ar_id', self::domid_encode($a_set[$this->ar_id_field_name]));
+        $this->ctrl->setParameterByClass(get_class($this->parent_obj), 'ar_id',
+            self::domid_encode($a_set[$this->getFields()->getPrimaryField()->getName()]));
     }
 
     /**
@@ -506,7 +582,8 @@ class arIndexTableGUI extends ilTable2GUI
      */
     protected function addMultiItemActionCheckboxToRow($a_set){
         if($this->getMultiItemActions()){
-            $this->tpl->setVariable('ID', self::domid_encode($a_set[$this->ar_id_field_name]));
+            $this->tpl->setVariable('ID',
+                self::domid_encode($a_set[$this->getFields()->getPrimaryField()->getName()]));
         }
     }
 
@@ -543,7 +620,7 @@ class arIndexTableGUI extends ilTable2GUI
         if ($this->getActions())
         {
             $alist = new ilAdvancedSelectionListGUI();
-            $alist->setId(self::domid_encode($a_set[$this->ar_id_field_name]));
+            $alist->setId(self::domid_encode($a_set[$this->getFields()->getPrimaryField()->getName()]));
             $alist->setListTitle($this->txt('actions', false));
 
             foreach ($this->getActionsAsArray() as $action)
@@ -666,7 +743,7 @@ class arIndexTableGUI extends ilTable2GUI
 
 
     /**
-     * @return arViewField[]
+     * @return arIndexTableField[]
      */
     public function getFieldsAsArray()
     {

@@ -76,10 +76,7 @@ class arIndexTableField extends arViewField
      */
     public function setVisibleDefault($visible_default)
     {
-        if($visible_default)
-        {
-            $this->setVisible(true);
-        }
+        $this->setVisible(true);
         $this->visible_default = $visible_default;
     }
 

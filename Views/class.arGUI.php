@@ -80,7 +80,7 @@ class arGUI {
                 $this->$cmd(arIndexTableGUI::domid_decode($_GET['ar_id']));
                 break;
             case "multiAction":
-                $action_name = $_POST["index_table_multi_action"];
+                $action_name = $_POST["index_table_multi_action_2"];
                 $this->multiAction($action_name);
                 break;
             default:
@@ -141,6 +141,7 @@ class arGUI {
             ilUtil::sendFailure($this->txt("no_checkbox",false),true);
             $this->ctrl->redirect($this, "index");
         }
+
 
         switch($action_name)
         {

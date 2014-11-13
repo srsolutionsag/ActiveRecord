@@ -19,7 +19,7 @@ class arIndexTableFields extends arViewFields
 
     /**
      * Get selectable columns
-     * @param       arIndexTableGUI used as translating instance
+     * @param       arIndexTableGUI $translator used as translating instance
      * @return		array
      */
     function getSelectableColumns(arIndexTableGUI $translator)

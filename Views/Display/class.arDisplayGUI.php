@@ -49,32 +49,41 @@ class arDisplayGUI{
 	 */
 	protected $back_button_target = "";
 
+    /**
+     * @var ilTemplate
+     */
+    protected $template;
+
 
     /**
      * @param arGUI $parent_gui
      * @param ActiveRecord $ar
-     * @param string $title
      */
-    public function __construct(arGUI $parent_gui, ActiveRecord $ar, $title = "") {
+    public function __construct(arGUI $parent_gui, ActiveRecord $ar) {
 		global $ilCtrl, $tpl;
-		$this->ctrl = $ilCtrl;
+        /**
+         * @var ilCtrl $ilCtrl
+         * @var ilTemplate $tpl
+         */
+        $this->ctrl = $ilCtrl;
 		$this->tpl = $tpl;
 		$this->ar = $ar;
 		$this->parent_gui = $parent_gui;
 
-        if(!$title)
-        {
-            $title = strtolower(str_replace("Record", "", get_class($ar)));
-        }
-        $this->setTitle($this->txt($title));
+        $this->ctrl->saveParameter($parent_gui, 'ar_id');
 
         $this->init();
 	}
 
     protected function init(){
+        $this->initTitle();
         $this->initFields();
         $this->initBackButton();
-        $this->ctrl->saveParameter($parent_gui, 'ar_id');
+        $this->initTemplate();
+    }
+
+    protected function initTitle(){
+        $this->setTitle(strtolower(str_replace("Record", "", get_class($this->ar))));
     }
 
     protected function initFields(){
@@ -83,13 +92,17 @@ class arDisplayGUI{
         $this->fields->sortFields();
     }
 
-    public function customizeFields()
-    {
+    protected function customizeFields(){
+
     }
 
-    public function initBackButton(){
+    protected function initBackButton(){
         $this->setBackButtonName($this->txt("back", false));
         $this->setBackButtonTarget($this->ctrl->getLinkTarget($this->parent_gui, "index"));
+    }
+
+    protected function initTemplate(){
+        $this->setTemplate(new ilTemplate("tpl.display.html", true, true, "Customizing/global/plugins/Libraries/ActiveRecord"));
     }
 
 
@@ -97,30 +110,31 @@ class arDisplayGUI{
      * @return string
      */
     public function getHtml() {
-		$tpl_display = new ilTemplate("tpl.display.html", true, true, "Customizing/global/plugins/Libraries/ActiveRecord");
 
-		$tpl_display->setVariable("TITLE", $this->title);
 
+		$this->getTemplate()->setVariable("TITLE", $this->title);
+        $this->setArFieldsData();
+        $this->getTemplate()->setVariable("BACK_BUTTON_NAME", $this->getBackButtonName());
+        $this->getTemplate()->setVariable("BACK_BUTTON_TARGET", $this->getBackButtonTarget());
+
+		return $this->getTemplate()->get();
+	}
+
+    protected function setArFieldsData(){
         foreach ($this->fields->getFields() as $field) {
             /**
              * @var arDisplayField $field
              */
             if ($field->getVisible()) {
-                $get_function = "get" . $this->ar->_toCamelCase($field->getName(), true);
+                $get_function = $field->getGetFunctionName();
                 $value = $this->ar->$get_function();
-
-                $tpl_display->setCurrentBlock("entry");
-                $tpl_display->setVariable("ITEM", $this->txt($field->getTxt()));
-                $tpl_display->setVariable("VALUE", $this->setArFieldData($field, $value));
-                $tpl_display->parseCurrentBlock();
+                $this->getTemplate()->setCurrentBlock("entry");
+                $this->getTemplate()->setVariable("ITEM", $this->txt($field->getTxt()));
+                $this->getTemplate()->setVariable("VALUE", $this->setArFieldData($field, $value));
+                $this->getTemplate()->parseCurrentBlock();
             }
         }
-
-		$tpl_display->setVariable("BACK_BUTTON_NAME", $this->getBackButtonName());
-		$tpl_display->setVariable("BACK_BUTTON_TARGET", $this->getBackButtonTarget());
-
-		return $tpl_display->get();
-	}
+    }
 
     /**
      * @param arDisplayField $field
@@ -249,7 +263,6 @@ class arDisplayGUI{
 
     /**
      * @param arDisplayFields $fields
-     * @return mixed
      */
     function setFields(arDisplayFields $fields){
         $this->fields = $fields;
@@ -260,7 +273,16 @@ class arDisplayGUI{
      */
     public function getFields()
     {
-        return $this->fields->getFields();
+        return $this->fields;
+    }
+
+
+    /**
+     * @return arDisplayField []
+     */
+    public function getFieldsAsArray()
+    {
+        return $this->getFields()->getFields();
     }
 
     /**
@@ -269,7 +291,7 @@ class arDisplayGUI{
      */
     public function getField($field_name)
     {
-        return $this->fields->getField($field_name);
+        return $this->getFields()->getField($field_name);
     }
 
 
@@ -278,7 +300,7 @@ class arDisplayGUI{
      */
     public function addField(arDisplayField $field)
     {
-        $this->fields->addField($field);
+        $this->getFields()->addField($field);
     }
 
     /**
@@ -294,6 +316,22 @@ class arDisplayGUI{
      */
     public function getTitle() {
         return $this->title;
+    }
+
+    /**
+     * @param \ilTemplate $template
+     */
+    public function setTemplate($template)
+    {
+        $this->template = $template;
+    }
+
+    /**
+     * @return \ilTemplate
+     */
+    public function getTemplate()
+    {
+        return $this->template;
     }
 
     /**

@@ -41,7 +41,7 @@ class arIndexTableActions
             /**
              * arIndexTableAction $action
              */
-            return array($action->getId()=>$translator->txt($action->getTitle()));
+            $actions[$action->getId()] = $translator->txt($action->getTitle());
         }
         return $actions;
     }
