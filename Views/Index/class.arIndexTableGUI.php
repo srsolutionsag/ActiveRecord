@@ -158,17 +158,31 @@ class arIndexTableGUI extends ilTable2GUI
         if($this->getActions() && $this->getActions()->getAction("edit"))
         {
             $toolbar = new ilToolbarGUI();
-            $toolbar->addButton($this->txt("add_item"), $this->ctrl->getLinkTarget($this->parent_obj, "add"));
+            $toolbar->addButton($this->getAddButtonTxt(), $this->ctrl->getLinkTarget($this->parent_obj, "add"));
             $this->setToolbar($toolbar);
         }
+    }
+
+    /**
+     * @return string
+     */
+    protected function getAddButtonTxt(){
+        return $this->txt("add_item");
     }
 
     protected function initMultiItemActions()
     {
         if($this->getActions() && $this->getActions()->getAction("delete"))
         {
-            $this->addMutliItemAction(new arIndexTableAction('delete', 'delete', get_class($this->parent_obj), 'delete'));
+            $this->addMutliItemAction(new arIndexTableAction('delete', $this->getMultiDeleteTxt(), get_class($this->parent_obj), 'delete'));
         }
+    }
+
+    /**
+     * @return string
+     */
+    protected function getMultiDeleteTxt(){
+        return $this->txt("delete",false);
     }
 
     /**
@@ -187,7 +201,7 @@ class arIndexTableGUI extends ilTable2GUI
     {
         if($this->getMultiItemActions())
         {
-            $this->addMultiItemSelectionButton("index_table_multi_action",$this->multi_item_actions->getActionsAsKeyTextArray($this),"multiAction",$this->txt('execute',false));
+            $this->addMultiItemSelectionButton("index_table_multi_action",$this->multi_item_actions->getActionsAsKeyTextArray(),"multiAction",$this->txt('execute',false));
             $this->setSelectAllCheckbox("id[]");
         }
     }
@@ -346,7 +360,13 @@ class arIndexTableGUI extends ilTable2GUI
                     if (!$item[$field->getName()])
                     {
                         $data[$key][$field->getName()] = $this->setEmptyFieldData($field, $item);
-                    } else
+                    } elseif($field->getIsCreatedByField())
+                    {
+                        $data[$key][$field->getName()] = $this->setArCreatedByField($field, $item, $item[$field->getName()]);
+                    } elseif($field->getIsModifiedByField())
+                    {
+                        $data[$key][$field->getName()] = $this->setArModifiedByField($field, $item, $item[$field->getName()]);
+                    }else
                     {
                         $data[$key][$field->getName()] = $this->setArFieldData($field, $item, $item[$field->getName()]);
                     }
@@ -507,6 +527,30 @@ class arIndexTableGUI extends ilTable2GUI
     protected function setEmptyFieldData(arIndexTableField $field, $item)
     {
         return "";
+    }
+
+    /**
+     * @param arIndexTableField $field
+     * @param $item
+     * @param $value
+     * @return string
+     */
+    protected function setArModifiedByField(arIndexTableField $field, $item, $value)
+    {
+        $user = new ilObjUser($value);
+        return $user->getPublicName();
+    }
+
+    /**
+     * @param arIndexTableField $field
+     * @param $item
+     * @param $value
+     * @return string
+     */
+    protected function setArCreatedByField(arIndexTableField $field, $item, $value)
+    {
+        $user = new ilObjUser($value);
+        return $user->getPublicName();
     }
 
     /**

@@ -213,12 +213,19 @@ class arGUI {
      */
     public function save(arEditGUI $edit_gui) {
 		if ($edit_gui->saveObject()) {
-			ilUtil::sendSuccess($this->txt('record_created'), true);
+			ilUtil::sendSuccess($this->getRecordCreatedMessage());
 			$this->ctrl->redirect($this, "index");
 		} else {
 			$this->tpl->setContent($edit_gui->getHTML());
 		}
 	}
+
+    /**
+     * @return string
+     */
+    public function getRecordCreatedMessage(){
+        return $this->txt(('record_created'), true);
+    }
 
     /**
      * @param $id
@@ -248,8 +255,27 @@ class arGUI {
          * @var arDeleteGUI $delete_gui
          */
         $delete_gui = new $delete_gui_class($this, "delete", new ActiveRecordList($this->ar),"delete",$ids);
-        ilUtil::sendQuestion($this->txt("delete_items_confirmation"),true);
+        if(count($ids) == 1){
+            ilUtil::sendQuestion($this->getDeleteRecordConfirmationMessage());
+        }
+        else{
+            ilUtil::sendQuestion($this->getDeleteRecordsConfirmationMessage());
+        }
         $this->tpl->setContent($delete_gui->getHTML());
+    }
+
+    /**
+     * @return string
+     */
+    public function getDeleteRecordsConfirmationMessage(){
+        return $this->txt(('delete_records_confirmation'), true);
+    }
+
+    /**
+     * @return string
+     */
+    public function getDeleteRecordConfirmationMessage(){
+        return $this->txt(('delete_record_confirmation'), true);
     }
 
     function deleteItems() {
@@ -259,12 +285,33 @@ class arGUI {
             $record = $this->ar->find($id);
             $record->delete();
         }
-        ilUtil::sendSuccess($this->txt("items_deleted"),true);
+        if($i==1){
+            ilUtil::sendSuccess($this->getDeleteRecordMessage(),true);
+        }
+        else{
+            ilUtil::sendSuccess($this->getDeleteRecordsMessage(),true);
+        }
+
         $this->ctrl->redirect($this, "index");
 	}
 
+    /**
+     * @return string
+     */
+    public function getDeleteRecordsMessage(){
+        return $this->txt(('records_deleted'), true);
+    }
 
-	/**
+    /**
+     * @return string
+     */
+    public function getDeleteRecordMessage(){
+        return $this->txt(('record_deleted'), true);
+    }
+
+
+
+    /**
 	 * @param string $lng_prefix
 	 */
 	public function setLngPrefix($lng_prefix) {

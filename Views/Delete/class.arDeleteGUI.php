@@ -69,7 +69,7 @@ class arDeleteGUI extends arIndexTableGUI {
         /**
          * @var arIndexTableField $field
          */
-        $field->setTxt("view_field_".$field->getName());
+        $field->setTxt($field->getName());
         $field->setVisibleDefault(true);
         $field->setHasFilter(false);
         $field->setSortable(false);
@@ -98,7 +98,7 @@ class arDeleteGUI extends arIndexTableGUI {
             {
                 $query .= " OR ";
             }
-            $query .= $this->ar_id_field_name ." = '" .$id."'";
+            $query .= $this->getFields()->getPrimaryField()->getName() ." = '" .$id."'";
         }
         return $query;
     }

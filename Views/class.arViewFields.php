@@ -33,6 +33,27 @@ class arViewFields
     protected $txt_prefix = "";
 
     /**
+     * @var arViewField
+     */
+    protected $created_by_field = null;
+
+    /**
+     * @var arViewField
+     */
+    protected $modified_by_field = null;
+
+    /**
+     * @var arViewField
+     */
+    protected $creation_date_field = null;
+
+    /**
+     * @var arViewField
+     */
+    protected $modification_date_field = null;
+
+
+    /**
      * @param ActiveRecord $ar
      */
     public function __construct(ActiveRecord $ar)
@@ -142,5 +163,117 @@ class arViewFields
     public function getTxtPrefix()
     {
         return $this->txt_prefix;
+    }
+
+    /**
+     * @param \arViewField $created_by_field
+     */
+    public function setCreatedByField($created_by_field)
+    {
+        $created_by_field->setIsCreatedByField(true);
+        $this->created_by_field = $created_by_field;
+    }
+
+    /**
+     * @return \arViewField
+     */
+    public function getCreatedByField()
+    {
+        if(!$this->created_by_field){
+            foreach($this->getFields() as $field)
+            {
+                /**
+                 * @var $field arViewField
+                 */
+                if($field->getIsCreatedByField()){
+                    return $this->created_by_field = $field;
+                }
+            }
+        }
+        return $this->created_by_field;
+    }
+
+    /**
+     * @param \arViewField $creation_date_field
+     */
+    public function setCreationDateField($creation_date_field)
+    {
+        $creation_date_field->setIsCreationDateField(true);
+        $this->creation_date_field = $creation_date_field;
+    }
+
+    /**
+     * @return \arViewField
+     */
+    public function getCreationDateField()
+    {
+        if(!$this->creation_date_field){
+            foreach($this->getFields() as $field)
+            {
+                /**
+                 * @var $field arViewField
+                 */
+                if($field->getIsCreationDateField()){
+                    return $this->creation_date_field = $field;
+                }
+            }
+        }
+        return $this->creation_date_field;
+    }
+
+    /**
+     * @param \arViewField $modification_date_field
+     */
+    public function setModificationDateField($modification_date_field)
+    {
+        $modification_date_field->setIsModificationDateField(true);
+        $this->modification_date_field = $modification_date_field;
+    }
+
+    /**
+     * @return \arViewField
+     */
+    public function getModificationDateField()
+    {
+        if(!$this->modification_date_field){
+            foreach($this->getFields() as $field)
+            {
+                /**
+                 * @var $field arViewField
+                 */
+                if($field->getIsModificationDateField()){
+                    return $this->modification_date_field = $field;
+                }
+            }
+        }
+        return $this->modification_date_field;
+    }
+
+    /**
+     * @param \arViewField $modified_by_field
+     */
+    public function setModifiedByField($modified_by_field)
+    {
+        $modified_by_field->setIsModifiedByField(true);
+        $this->modified_by_field = $modified_by_field;
+    }
+
+    /**
+     * @return \arViewField
+     */
+    public function getModifiedByField()
+    {
+        if(!$this->modified_by_field){
+            foreach($this->getFields() as $field)
+            {
+                /**
+                 * @var $field arViewField
+                 */
+                if($field->getIsModifiedByField()){
+                    return $this->modified_by_field = $field;
+                }
+            }
+        }
+        return $this->modified_by_field;
     }
 }

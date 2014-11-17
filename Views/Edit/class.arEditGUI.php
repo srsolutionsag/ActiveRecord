@@ -27,7 +27,10 @@ class arEditGUI extends ilPropertyFormGUI {
 	 * @var string
 	 */
 	protected $form_name = "";
-
+    /**
+     * @var string
+     */
+    protected $form_prefix = "";
     /**
      * @var arEditFields
      */
@@ -44,9 +47,15 @@ class arEditGUI extends ilPropertyFormGUI {
 		$this->parent_gui = $parent_gui;
 		$this->ctrl = $ilCtrl;
 		$this->ctrl->saveParameter($parent_gui, 'ar_id');
+        $this->setFormName(get_class($ar));
         $this->init();
 	}
 
+    /**
+     ******************************************************************
+     *********************** Form Initialization **********************
+     ******************************************************************
+     */
     protected function init(){
         $this->initFields();
         $this->initForm();
@@ -61,11 +70,21 @@ class arEditGUI extends ilPropertyFormGUI {
         $this->fields->sortFields();
     }
 
+    protected function customizeFields(){
+
+    }
+
     protected function initForm() {
+        $this->BeforeInitForm();
         $this->initFormAction();
         $this->initFormTitle();
         $this->generateFormFields();
         $this->initCommandButtons();
+        $this->afterInitForm();
+    }
+
+    protected function beforeInitForm(){
+
     }
 
     protected function initFormAction() {
@@ -73,20 +92,12 @@ class arEditGUI extends ilPropertyFormGUI {
     }
 
     protected function initFormTitle() {
+        $this->setFormPrefix("");
         if ($this->ar->getPrimaryFieldValue()  == 0) {
-            $this->setTitle($this->txt('create_' . $this->form_name));
+            $this->setTitle($this->txt($this->getFormPrefix().'create_' . $this->getFormName()));
         } else {
-            $this->setTitle($this->txt('edit_' . $this->form_name));
+            $this->setTitle($this->txt($this->getFormPrefix().'edit_' . $this->getFormName()));
         }
-    }
-
-    protected function initCommandButtons() {
-        if ($this->ar->getPrimaryFieldValue()  == 0) {
-            $this->addCommandButton('create', $this->txt('create', false));
-        } else {
-            $this->addCommandButton('update', $this->txt('save', false));
-        }
-        $this->addCommandButton('index', $this->txt('cancel', false));
     }
 
 
@@ -106,43 +117,39 @@ class arEditGUI extends ilPropertyFormGUI {
      * @param arEditField $field
      */
     protected function addFormField(arEditField $field) {
-		$field_element = NULL;
-        if($field->getIsBoolean()){
-            $field_element = $this->addBooleanInputField($field);
-        }
-        else{
+        $field_element = NULL;
+        if(!$field->getFormElement()){
             switch ($field->getFieldType()) {
                 case 'integer':
                 case 'float':
-                    $field_element = $this->addNumbericInputField($field);
+                    $field->setFormElement($this->addNumbericInputField($field));
                     break;
-                case 'text':
-                    $field_element = $this->addTextInputField($field);
                     break;
                 case 'date':
                 case 'time':
                 case 'timestamp':
-                    $field_element = $this->addDateTimeInputField($field);
+                    $field->setFormElement($this->addDateTimeInputField($field));
                     break;
                 case 'clob':
-                    $field_element = $this->addClobInputField($field);
+                    $field->setFormElement($this->addClobInputField($field));
                     break;
+                default:
+                    $field->setFormElement($this->addTextInputField($field));
+            }
+            if ($field->getNotNull()) {
+                $field->getFormElement()->setRequired(true);
             }
         }
-		if ($field->getNotNull()) {
-			$field_element->setRequired(true);
-		}
-		$this->adaptAnyInput($field_element, $field);
 
-		if ($field_element) {
-            if($field->getIsSubelementOf()){
-                $item = $this->getItemByPostVar('prevent_login');
-                $item->addSubItem($field_element);
+        if ($field->getFormElement()) {
+            if($field->getSubelementOf()){
+                $field->getSubelementOf()->addSubItem($field->getFormElement());
             }
             else{
-                $this->addItem($field_element);
+                $this->addItem($field->getFormElement());
             }
-		}
+
+        }
 	}
 
     /**
@@ -193,14 +200,25 @@ class arEditGUI extends ilPropertyFormGUI {
 		return new ilTextAreaInputGUI($this->txt($field->getTxt()), $field->getName());
 	}
 
+    protected function initCommandButtons() {
+        if ($this->ar->getPrimaryFieldValue()  == 0) {
+            $this->addCommandButton('create', $this->txt('create', false));
+        } else {
+            $this->addCommandButton('update', $this->txt('save', false));
+        }
+        $this->addCommandButton('index', $this->txt('cancel', false));
+    }
+
+    protected function afterInitForm(){
+
+    }
+
 
     /**
-     * @param ilFormPropertyGUI|NULL $any_input
-     * @param arEditField $field
+     ******************************************************************
+     *********************** Fill Form  *******************************
+     ******************************************************************
      */
-    protected function adaptAnyInput(&$any_input, arEditField $field) {
-	}
-
 	public function fillForm() {
         $this->beforeFillForm();
 		foreach ($this->fields->getFields() as $field) {
@@ -208,9 +226,8 @@ class arEditGUI extends ilPropertyFormGUI {
              * @var arEditField $field
              */
 			if ($field->getVisible()) {
-                $form_item = $this->getItemByPostVar($field->getName());
-                if($form_item){
-                    $this->fillFormField($form_item, $field);
+                if($field->getFormElement()){
+                    $this->fillFormField($field);
                 }
 
 			}
@@ -227,36 +244,50 @@ class arEditGUI extends ilPropertyFormGUI {
     }
 
     /**
-     * @param ilFormPropertyGUI $form_item
      * @param arEditField $field
      */
-    public function fillFormField(ilFormPropertyGUI $form_item, arEditField $field){
+    protected function fillFormField(arEditField $field){
         $get_function = $field->getGetFunctionName();
-        if($field->getIsBoolean()){
-            $form_item->setValue(1);
-            $form_item->setChecked($this->ar->$get_function()==1 ? true : false);
-            return;
-        }
-        switch ($field->getFieldType()) {
-            case 'integer':
-            case 'float':
-            case 'text':
-            case 'clob':
-                $form_item->setValue($this->ar->$get_function());
+        switch (get_class($field->getFormElement())) {
+            case 'ilCheckboxInputGUI':
+                $field->getFormElement()->setValue(1);
+                $field->getFormElement()->setChecked($this->ar->$get_function()==1 ? true : false);
                 break;
-            case 'date':
-            case 'time':
-            case 'timestamp':
+            case 'ilNumberInputGUI':
+            case 'ilSelectInputGUI':
+            case 'ilTextInputGUI':
+            case 'ilTextAreaInputGUI':
+            case 'ilRadioGroupInputGUI':
+                $field->getFormElement()->setValue($this->ar->$get_function());
+                break;
+            case 'ilDateTimeInputGUI':
+            case 'ilDate':
                 /**
                 * @var ilDateTimeInputGUI $form_item
                 */
                 $datetime = new ilDateTime($this->ar->$get_function(), IL_CAL_DATETIME);
                 $form_item->setDate($datetime);
                 break;
+            default:
+                $this->fillCustomFormField($field);
+                break;
         }
     }
 
+    /**
+     * @param arEditField $field
+     */
+    protected  function fillCustomFormField(arEditField $field){
 
+    }
+
+
+
+    /**
+     ******************************************************************
+     *********************** After Submit  ****************************
+     ******************************************************************
+     */
     /**
      * @return bool
      */
@@ -353,31 +384,27 @@ class arEditGUI extends ilPropertyFormGUI {
 
         if ($field->getPrimary()) {
             $valid = true;
-        } elseif(array_key_exists($field->getName(), $_POST)) {
-
-
-            switch ($field->getFieldType()) {
-                case 'integer':
-                case 'float':
-                    $valid = $this->setNumericRecordField($field);
-                    break;
-                case 'text':
-                    $valid = $this->setTextRecordField($field);
-                    break;
-                case 'date':
-                case 'time':
-                case 'timestamp':
-                    $valid = $this->setDateTimeRecordField($field);
-                    break;
-                case 'clob':
-                    $valid = $this->setClobRecordField($field);
-                    break;
+            return true;
+        }
+        if(array_key_exists($field->getName(), $_POST)) {
+            switch (get_class($field->getFormElement())) {
+                case 'ilNumberInputGUI':
+                case 'ilCheckboxInputGUI':
+                case 'ilSelectInputGUI':
+                case 'ilRadioGroupInputGUI':
+                    return $this->setNumericRecordField($field);
+                case 'ilTextInputGUI':
+                case 'ilTextAreaInputGUI':
+                    return $this->setTextRecordField($field);
+                case 'ilDateTimeInputGUI':
+                case 'ilDate':
+                    return $this->setDateTimeRecordField($field);
+                default:
+                    return $this->setCustomRecordField($field);
             }
-        } else {
-            $valid = $this->handleEmptyPostValue($field);;
         }
 
-        return $valid;
+        return $this->handleEmptyPostValue($field);;
     }
 
     /**
@@ -419,12 +446,11 @@ class arEditGUI extends ilPropertyFormGUI {
         return true;
     }
 
-
     /**
      * @param arEditField $field
      * @return bool
      */
-    protected function setClobRecordField(arEditField $field) {
+    protected function setCustomRecordField(arEditField $field) {
         return true;
     }
 
@@ -437,6 +463,11 @@ class arEditGUI extends ilPropertyFormGUI {
         return true;
     }
 
+    /**
+     ******************************************************************
+     *********************** Setters and Getters  *********************
+     ******************************************************************
+     */
     /**
      * @param arEditFields $fields
      */
@@ -488,4 +519,38 @@ class arEditGUI extends ilPropertyFormGUI {
     protected function txt($txt, $plugin_txt = true) {
 		return $this->parent_gui->txt($txt, $plugin_txt);
 	}
+
+    /**
+     * @param string $form_name
+     */
+    public function setFormName($form_name)
+    {
+        $this->form_name = $form_name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFormName()
+    {
+        return $this->form_name;
+    }
+
+    /**
+     * @param string $form_prefix
+     */
+    public function setFormPrefix($form_prefix)
+    {
+        $this->form_prefix = $form_prefix;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFormPrefix()
+    {
+        return $this->form_prefix;
+    }
+
+
 }

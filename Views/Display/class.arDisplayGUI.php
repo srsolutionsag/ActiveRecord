@@ -148,28 +148,27 @@ class arDisplayGUI{
         else if($value == null){
             return $this->setEmptyFieldData($field);
         }
+        else if($field->getIsCreatedByField()){
+            return $this->setCreatedByData($field, $value);
+        }
+        else if($field->getIsModifiedByField()){
+            return $this->setModifiedByData($field, $value);
+        }
         else{
-            $field_value = null;
             switch ($field->getFieldType()) {
                 case 'integer':
                 case 'float':
-                    $field_value = $this->setNumericData($field, $value);
-                    break;
+                    return $this->setNumericData($field, $value);
                 case 'text':
-                    $field_value = $this->setTextData($field, $value);
-                    break;
+                    return $this->setTextData($field, $value);
                 case 'date':
                 case 'time':
                 case 'timestamp':
-                    $field_value = $this->setDateTimeData($field, $value);
-                    break;
+                    return $this->setDateTimeData($field, $value);
                 case 'clob':
-                    $field_value = $this->setClobData($field, $value);
-                    break;
+                    return $this->setClobData($field, $value);
             }
         }
-
-        return $field_value;
     }
 
     /**
@@ -187,6 +186,28 @@ class arDisplayGUI{
     protected function setCustomFieldData(arDisplayField $field)
     {
         return "CUSTOM-OVERRIDE: setCustomFieldData";
+    }
+
+    /**
+     * @param arDisplayField $field
+     * @param $value
+     * @return string
+     */
+    protected function setModifiedByData(arDisplayField $field, $value)
+    {
+        $user = new ilObjUser($value);
+        return $user->getPublicName();
+    }
+
+    /**
+     * @param arDisplayField $field
+     * @param $value
+     * @return string
+     */
+    protected function setCreatedByData(arDisplayField $field, $value)
+    {
+        $user = new ilObjUser($value);
+        return $user->getPublicName();
     }
 
     /**

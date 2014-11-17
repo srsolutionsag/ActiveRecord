@@ -39,6 +39,26 @@ class arViewField extends arField
      */
     protected $set_function_name = "";
 
+    /**
+     * @var bool
+     */
+    protected $is_created_by_field = false;
+
+    /**
+     * @var bool
+     */
+    protected $is_modified_by_field = false;
+
+    /**
+     * @var bool
+     */
+    protected $is_creation_date_field = false;
+
+    /**
+     * @var bool
+     */
+    protected $is_modification_date_field = false;
+
 
     /**
      * @param $name
@@ -177,6 +197,69 @@ class arViewField extends arField
         return $this->set_function_name;
     }
 
+    /**
+     * @param boolean $is_created_by_field
+     */
+    public function setIsCreatedByField($is_created_by_field)
+    {
+        $this->is_created_by_field = $is_created_by_field;
+    }
+
+    /**
+     * @param $is_creation_date_field
+     */
+    public function setIsCreationDateField($is_creation_date_field)
+    {
+        $this->is_creation_date_field = $is_creation_date_field;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getIsCreationDateField()
+    {
+        return $this->is_creation_date_field;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getIsCreatedByField()
+    {
+        return $this->is_created_by_field;
+    }
+
+    /**
+     * @param boolean $is_modified_by_field
+     */
+    public function setIsModifiedByField($is_modified_by_field)
+    {
+        $this->is_modified_by_field = $is_modified_by_field;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getIsModifiedByField()
+    {
+        return $this->is_modified_by_field;
+    }
+
+    /**
+     * @param $is_modification_date_field
+     */
+    public function setIsModificationDateField($is_modification_date_field)
+    {
+        $this->is_modification_date_field = $is_modification_date_field;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getIsModificationDateField()
+    {
+        return $this->is_modification_date_field;
+    }
 
     /**
      * @param arField $field

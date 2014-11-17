@@ -31,17 +31,16 @@ class arIndexTableActions
     }
 
     /**
-     * @param arIndexTableGUI $translator
      * @return array
      */
-    public function getActionsAsKeyTextArray(arIndexTableGUI $translator)
+    public function getActionsAsKeyTextArray()
     {
         $actions = array();
         foreach($this->getActions() as $action){
             /**
              * arIndexTableAction $action
              */
-            $actions[$action->getId()] = $translator->txt($action->getTitle());
+            $actions[$action->getId()] = $action->getTitle();
         }
         return $actions;
     }
