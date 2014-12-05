@@ -42,11 +42,16 @@ class arWhere extends arStatement {
 	 *
 	 * @param ActiveRecord $ar
 	 *
+	 * @throws arException
 	 * @return string
 	 */
 	public function asSQLStatement(ActiveRecord $ar) {
 		if ($this->getType() == self::TYPE_REGULAR) {
-			$type = $ar->getArFieldList()->getFieldByName($this->getFieldname())->getFieldType();
+			$arField = $ar->getArFieldList()->getFieldByName($this->getFieldname());
+			if (!$arField instanceof arField) {
+				throw new arException(arException::FIELD_UNKNOWN, $this->getFieldname());
+			}
+			$type = $arField->getFieldType();
 			$statement = $ar->getConnectorContainerName() . '.' . $this->getFieldname();
 			if (is_array($this->getValue())) {
 				$statement .= ' IN(';
