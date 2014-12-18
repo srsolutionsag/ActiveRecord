@@ -56,7 +56,7 @@ class arWhere extends arStatement {
 			}
 
 			if (is_array($this->getValue())) {
-				if ($this->getOperator()) {
+				if (in_array($this->getOperator(), array( 'IN', 'NOT IN', 'NOTIN' ))) {
 					$statement .= ' ' . $this->getOperator() . ' (';
 				} else {
 					$statement .= ' IN (';
