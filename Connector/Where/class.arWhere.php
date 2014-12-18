@@ -56,7 +56,11 @@ class arWhere extends arStatement {
 			}
 
 			if (is_array($this->getValue())) {
-				$statement .= ' ' . $this->getOperator() . ' (';
+				if ($this->getOperator()) {
+					$statement .= ' ' . $this->getOperator() . ' (';
+				} else {
+					$statement .= ' IN (';
+				}
 				$values = array();
 				foreach ($this->getValue() as $value) {
 					$values[] = $ar->getArConnector()->quote($value, $type);
