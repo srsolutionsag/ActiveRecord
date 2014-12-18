@@ -48,13 +48,15 @@ class arWhere extends arStatement {
 	public function asSQLStatement(ActiveRecord $ar) {
 		if ($this->getType() == self::TYPE_REGULAR) {
 			$arField = $ar->getArFieldList()->getFieldByName($this->getFieldname());
-			if (!$arField instanceof arField) {
-				throw new arException(arException::FIELD_UNKNOWN, $this->getFieldname());
+			if ($arField instanceof arField) {
+				$type = $arField->getFieldType();
+				$statement = $ar->getConnectorContainerName() . '.' . $this->getFieldname();
+			} else {
+				$statement = $this->getFieldname();
 			}
-			$type = $arField->getFieldType();
-			$statement = $ar->getConnectorContainerName() . '.' . $this->getFieldname();
+
 			if (is_array($this->getValue())) {
-				$statement .= ' IN(';
+				$statement .= ' ' . $this->getOperator() . ' (';
 				$values = array();
 				foreach ($this->getValue() as $value) {
 					$values[] = $ar->getArConnector()->quote($value, $type);
