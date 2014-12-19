@@ -8,7 +8,7 @@ require_once("./Connector/class.arConnectorPdoDB.php");
  * @description PHP Unit-Test for ILIAS ActiveRecord
  *
  * @author      Oskar truffer <ot@studer-raimann.ch>
- * @version 2.0.6
+ * @version     2.0.7
  */
 class StackTest extends PHPUnit_Framework_TestCase {
 
@@ -26,7 +26,7 @@ class StackTest extends PHPUnit_Framework_TestCase {
 		PHPUnit_Framework_Error_Notice::$enabled = false;
 		arUnitTestRecord::installDB();
 		$arUnitTestRecord = new arUnitTestRecord();
-//		$this->table_name = arUnitTestRecord::returnDbTableName();
+		//		$this->table_name = arUnitTestRecord::returnDbTableName();
 		$this->table_name = $arUnitTestRecord->getConnectorContainerName();
 		$this->pdo = arConnectorPdoDB::getConnector();
 	}
@@ -144,7 +144,7 @@ class StackTest extends PHPUnit_Framework_TestCase {
 	//TODO mehr active records und list funktionen.
 
 	public function testMoreListFuntionality() {
-		$entry = arUnitTestRecord::where(array( "title" => "Title" ), '!=')->limit(0,100)->orderBy('title', 'DESC')->where('id != 1')->count();
+		$entry = arUnitTestRecord::where(array( "title" => "Title" ), '!=')->limit(0, 100)->orderBy('title', 'DESC')->where('id != 1')->count();
 		$this->assertEquals($entry, 2);
 
 		$arUnitTestRecord8 = arUnitTestRecord::findOrGetInstance(8);
@@ -167,7 +167,6 @@ class StackTest extends PHPUnit_Framework_TestCase {
 		$arUnitTestRecord8_fromCache = arUnitTestRecord::find(2);
 		$this->assertEquals($arUnitTestRecord8_fromCache->getId(), 2);
 
-
 		$arUnitTestRecord6 = new arUnitTestRecord();
 		$arUnitTestRecord6->setId(16);
 		$arUnitTestRecord6->setTitle('Title 16');
@@ -178,6 +177,7 @@ class StackTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse(arObjectCache::isCached('arUnitTestRecord', 16));
 		$this->assertEquals(arUnitTestRecord::find(16), NULL);
 	}
+
 
 	public function testMoreActiveRecordFunctionality() {
 		$entry = arUnitTestRecord::find(1);
