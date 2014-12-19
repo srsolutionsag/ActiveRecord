@@ -10,9 +10,10 @@ require_once("./Connector/class.arConnectorPdoDB.php");
  * @description PHP Unit-Test for ILIAS ActiveRecord
  *
  * @author      Fabian Schmid <fs@studer-raimann.ch>
- * @version 2.0.6
+ * @version     2.0.7
  */
 class ObjectCacheTest extends PHPUnit_Framework_TestCase {
+
 	/**
 	 * @var pdoDB
 	 */
@@ -36,6 +37,7 @@ class ObjectCacheTest extends PHPUnit_Framework_TestCase {
 	public function testTableExistant() {
 		$this->assertTrue($this->pdo->tableExists($this->table_name));
 	}
+
 
 	public static function tearDownAfterClass() {
 		$tableName = arUnitTestRecord::returnDbTableName();

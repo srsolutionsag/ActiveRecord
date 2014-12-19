@@ -5,7 +5,7 @@ require_once(dirname(__FILE__) . '/../Statement/class.arStatement.php');
  * Class arWhere
  *
  * @author  Fabian Schmid <fs@studer-raimann.ch>
- * @version 2.0.6
+ * @version 2.0.7
  */
 class arWhere extends arStatement {
 
@@ -56,7 +56,11 @@ class arWhere extends arStatement {
 			}
 
 			if (is_array($this->getValue())) {
-				$statement .= ' ' . $this->getOperator() . ' (';
+				if (in_array($this->getOperator(), array( 'IN', 'NOT IN', 'NOTIN' ))) {
+					$statement .= ' ' . $this->getOperator() . ' (';
+				} else {
+					$statement .= ' IN (';
+				}
 				$values = array();
 				foreach ($this->getValue() as $value) {
 					$values[] = $ar->getArConnector()->quote($value, $type);
