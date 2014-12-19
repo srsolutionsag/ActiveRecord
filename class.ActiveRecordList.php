@@ -219,7 +219,7 @@ class ActiveRecordList {
 	 */
 
 	protected function join($type = arJoin::TYPE_INNER, $tablename, $on_this, $on_external, $fields = array( '*' ), $operator = '=', $both_external = false) {
-		if (!$this->getAR()->getArFieldList()->isField($on_this) && !$both_external) {
+		if (!$this->getAR()->getArFieldList()->isField($on_this) AND !$both_external) {
 			throw new arException(arException::LIST_JOIN_ON_WRONG_FIELD, $on_this);
 		}
 		$full_names = false;
