@@ -36,7 +36,6 @@ class ObjectCacheTest extends PHPUnit_Framework_TestCase {
 
 	public function testTableExistant() {
 		$this->assertTrue($this->pdo->tableExists($this->table_name));
-		$this->assertTrue(false);
 	}
 
 
