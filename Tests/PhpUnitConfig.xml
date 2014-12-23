@@ -1,5 +1,7 @@
-<testsuites>
-  <testsuite name="Default Tests">
-    <directory>Tests/</directory>
-  </testsuite>
-</testsuites>
+<phpunit>
+  <testsuites>
+    <testsuite name="Default Tests">
+      <directory>./</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>
