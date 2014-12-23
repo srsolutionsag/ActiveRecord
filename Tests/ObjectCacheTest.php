@@ -28,7 +28,6 @@ class ObjectCacheTest extends PHPUnit_Framework_TestCase {
 		PHPUnit_Framework_Error_Notice::$enabled = false;
 		arUnitTestRecord::installDB();
 		$arUnitTestRecord = new arUnitTestRecord();
-		//		$this->table_name = arUnitTestRecord::returnDbTableName();
 		$this->table_name = $arUnitTestRecord->getConnectorContainerName();
 		$this->pdo = arConnectorPdoDB::getConnector();
 	}
