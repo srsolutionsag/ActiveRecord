@@ -13,7 +13,7 @@ class arJoinCollection extends arStatementCollection {
 	/**
 	 * @var array
 	 */
-	protected $table_names = [ ];
+	protected $table_names = array();
 
 
 	/**
