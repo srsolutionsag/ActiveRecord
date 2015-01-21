@@ -1,6 +1,6 @@
 <?php
 require_once('class.arField.php');
-
+require_once('Parent/class.arParentList.php');
 /**
  * Class arFieldList
  *
@@ -18,6 +18,8 @@ class arFieldList {
 	const LENGTH = 'length';
 	const SEQUENCE = 'sequence';
 	const INDEX = 'index';
+	const BELONGS_TO = 'belongs_to';
+	const DECLARED_AS = 'declared_as';
 	/**
 	 * @var array
 	 */
@@ -37,6 +39,8 @@ class arFieldList {
 		self::LENGTH,
 		self::SEQUENCE,
 		self::INDEX,
+		self::BELONGS_TO,
+		self::DECLARED_AS,
 	);
 	/**
 	 * @var array
@@ -62,6 +66,10 @@ class arFieldList {
 	 * @var array
 	 */
 	protected $fields = array();
+	/**
+	 * @var arParentList
+	 */
+	protected $parent_list;
 	/**
 	 * @var array
 	 */
@@ -108,6 +116,7 @@ class arFieldList {
 	 */
 	public static function getInstance(ActiveRecord $ar) {
 		$arFieldList = new self();
+		$arFieldList->parent_list = arParentList::getInstance($ar);
 		$arFieldList->initRawFields($ar);
 		$arFieldList->initFields();
 
@@ -123,6 +132,7 @@ class arFieldList {
 	 */
 	public static function getInstanceFromStorage($ar) {
 		$arFieldList = new self();
+		$arFieldList->parent_list = arParentList::getInstance($ar);
 		$arFieldList->initRawFields($ar);
 		$arFieldList->initFields();
 
@@ -219,7 +229,18 @@ class arFieldList {
 			if (in_array($property->getName(), self::$protected_names)) {
 				continue;
 			}
+
 			$properties_array = array();
+			$declaring_class = $property->getDeclaringClass()->name;
+			if ($declaring_class == get_class($ar)) {
+				$properties_array[self::BELONGS_TO] = $ar->getConnectorContainerName();
+			} else {
+				$arParent = $this->parent_list->getParentByClassName($declaring_class);
+				if ($arParent instanceof arParent) {
+					$properties_array[self::BELONGS_TO] = $arParent->getParentTableName();
+				}
+			}
+
 			$has_property = false;
 			foreach (explode("\n", $property->getDocComment()) as $line) {
 				if (preg_match($regex, $line, $matches)) {
@@ -227,6 +248,7 @@ class arFieldList {
 					$properties_array[(string)$matches[2]] = $matches[3];
 				}
 			}
+
 			if ($has_property) {
 				$raw_fields[$property->getName()] = $properties_array;
 			}

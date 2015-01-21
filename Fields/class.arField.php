@@ -155,6 +155,14 @@ class arField {
 	 * @var bool
 	 */
 	protected $index = false;
+	/**
+	 * @var string
+	 */
+	protected $belongs_to = '';
+	/**
+	 * @var string
+	 */
+	protected $declared_as = '';
 
 
 	/**
@@ -323,6 +331,38 @@ class arField {
 	 */
 	public static function isDateFieldType($field_type) {
 		return in_array($field_type, self::$date_fields);
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getBelongsTo() {
+		return $this->belongs_to;
+	}
+
+
+	/**
+	 * @param string $belongs_to
+	 */
+	public function setBelongsTo($belongs_to) {
+		$this->belongs_to = $belongs_to;
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getDeclaredAs() {
+		return $this->declared_as;
+	}
+
+
+	/**
+	 * @param string $declared_as
+	 */
+	public function setDeclaredAs($declared_as) {
+		$this->declared_as = $declared_as;
 	}
 }
 
