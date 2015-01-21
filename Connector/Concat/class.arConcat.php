@@ -17,7 +17,7 @@ class arConcat extends arStatement {
 	/**
 	 * @var array
 	 */
-	protected $fields = [ ];
+	protected $fields = array();
 
 
 	/**
