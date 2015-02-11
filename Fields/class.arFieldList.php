@@ -1,6 +1,7 @@
 <?php
 require_once('class.arField.php');
 require_once('Parent/class.arParentList.php');
+
 /**
  * Class arFieldList
  *
@@ -350,6 +351,24 @@ class arFieldList {
 	public function getPrimaryFields() {
 		return $this->primary_fields;
 	}
+
+
+	/**
+	 * @return arParentList
+	 */
+	public function getParentList() {
+		return $this->parent_list;
+	}
+
+
+	/**
+	 * @param arParentList $parent_list
+	 */
+	public function setParentList($parent_list) {
+		$this->parent_list = $parent_list;
+	}
+
+
 }
 
 ?>

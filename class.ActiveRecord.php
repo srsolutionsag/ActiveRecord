@@ -275,6 +275,7 @@ abstract class ActiveRecord implements arStorageInterface {
 
 			return $datetime->format(DATE_ISO8601);
 		}
+
 		return NULL;
 	}
 
@@ -288,7 +289,7 @@ abstract class ActiveRecord implements arStorageInterface {
 	public function wakeUp($field_name, $field_value) {
 		$field = $this->getArFieldList()->getFieldByName($field_name);
 		if ($field->autoConvertToDateTime()) {
-			return new DateTime($field_value);
+			//			return new DateTime($field_value);
 		}
 
 		return NULL;
@@ -426,7 +427,7 @@ abstract class ActiveRecord implements arStorageInterface {
 	 * @return bool
 	 */
 	final public static function updateDB() {
-		if (! self::tableExists()) {
+		if (!self::tableExists()) {
 			self::getCalledClass()->installDatabase();
 
 			return true;
@@ -434,6 +435,7 @@ abstract class ActiveRecord implements arStorageInterface {
 
 		return self::getCalledClass()->arConnector->updateDatabase(self::getCalledClass());
 	}
+
 
 	/**
 	 * @return bool
@@ -445,6 +447,7 @@ abstract class ActiveRecord implements arStorageInterface {
 			return $this->installDatabase();
 		}
 	}
+
 
 	/**
 	 * @return bool
@@ -520,7 +523,6 @@ abstract class ActiveRecord implements arStorageInterface {
 
 	public function read() {
 		$rec = $this->arConnector->read($this);
-
 		if (!$rec AND $this->ar_safe_read == true) {
 			throw new arException(arException::RECORD_NOT_FOUND, $this->getPrimaryFieldValue());
 		} elseif (!$rec AND $this->ar_safe_read == false) {
@@ -528,7 +530,6 @@ abstract class ActiveRecord implements arStorageInterface {
 		}
 
 		$this->mapFields($rec);
-
 		if ($this->getArFieldList()->getParentList()->hasParents()) {
 			foreach ($this->getArFieldList()->getParentList()->getParents() as $parent) {
 				if (!$parent->hasMapping()) {
@@ -565,13 +566,16 @@ abstract class ActiveRecord implements arStorageInterface {
 		arObjectCache::purge($this);
 	}
 
+
 	/**
 	 * @param $rec
 	 */
 	protected function mapFields($rec, $mapping = NULL) {
-		if(!$rec) {
+		if (!$rec) {
 			return;
 		}
+		$rec = $rec[0];
+
 		if (!$mapping) {
 			$mapping = $this->getArrayForConnector();
 		}
@@ -622,7 +626,7 @@ abstract class ActiveRecord implements arStorageInterface {
 		 */
 		try {
 			$class_name = get_called_class();
-			if (! arObjectCache::isCached($class_name, $primary_key)) {
+			if (!arObjectCache::isCached($class_name, $primary_key)) {
 				$obj = arFactory::getInstance($class_name, $primary_key, $add_constructor_args);
 				$obj->storeObjectToCache();
 
@@ -642,22 +646,23 @@ abstract class ActiveRecord implements arStorageInterface {
 	}
 
 
-    /**
-     * Tries to find the object and throws an Exception if object is not found, instead of returning null
-     *
-     * @param $primary_key
-     * @param array $add_constructor_args
-     * @throws arException
-     * @return ActiveRecord
-     */
-    public static function findOrFail($primary_key, array $add_constructor_args = array()) {
-        $obj = self::find($primary_key, $add_constructor_args);
-        if (is_null($obj)) {
-            throw new arException(arException::RECORD_NOT_FOUND);
-        }
+	/**
+	 * Tries to find the object and throws an Exception if object is not found, instead of returning null
+	 *
+	 * @param       $primary_key
+	 * @param array $add_constructor_args
+	 *
+	 * @throws arException
+	 * @return ActiveRecord
+	 */
+	public static function findOrFail($primary_key, array $add_constructor_args = array()) {
+		$obj = self::find($primary_key, $add_constructor_args);
+		if (is_null($obj)) {
+			throw new arException(arException::RECORD_NOT_FOUND);
+		}
 
-        return $obj;
-    }
+		return $obj;
+	}
 
 
 	/**

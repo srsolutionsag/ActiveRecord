@@ -72,14 +72,14 @@ class StackTest extends PHPUnit_Framework_TestCase {
 
 	public function testFind() {
 		$entry = new arUnitTestRecord(1);
-		$this->assertEquals($entry->getTitle(), "Title");
+		$this->assertEquals("Title", $entry->getTitle());
 
 		$entry = new arUnitTestRecord(2);
-		$this->assertEquals($entry->getTitle(), "Title 2");
+		$this->assertEquals("Title 2", $entry->getTitle());
 
 		/** @var arUnitTestRecord $entry */
 		$entry = arUnitTestRecord::find(3);
-		$this->assertEquals($entry->getTitle(), "Title 3");
+		$this->assertEquals("Title 3", $entry->getTitle());
 	}
 
 
@@ -245,7 +245,8 @@ class StackTest extends PHPUnit_Framework_TestCase {
 
 
 	public static function tearDownAfterClass() {
-		$tableName = arUnitTestRecord::returnDbTableName();
+		$arUnitTestRecord = new arUnitTestRecord();
+		$tableName = $arUnitTestRecord ->getConnectorContainerName();
 		$pbo = new pdoDB();
 		$pbo->manipulate("DROP TABLE {$tableName}");
 	}

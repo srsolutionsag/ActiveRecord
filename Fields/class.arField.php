@@ -120,6 +120,14 @@ class arField {
 
 
 	/**
+	 * @return bool
+	 */
+	public function autoConvertToDateTime() {
+		return $this->getFieldType() == self::FIELD_TYPE_TIMESTAMP AND $this->getDeclaredAs() == 'DateTime';
+	}
+
+
+	/**
 	 * @var
 	 */
 	protected $fieldtype;
