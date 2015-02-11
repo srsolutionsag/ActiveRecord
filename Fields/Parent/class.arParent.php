@@ -12,7 +12,8 @@ class arParent {
 
 
 	/**
-	 * @param string $parent
+	 * @param ActiveRecord $child
+	 * @param ActiveRecord $parent
 	 *
 	 * @return arParent
 	 */
@@ -35,10 +36,9 @@ class arParent {
 
 
 	protected function initMapping() {
-		$ref = new ReflectionClass($this->getChild());
+		$ref = new ReflectionClass(get_class($this->getChild()));
 		$matches = array();
 		preg_match_all("/@ar_mapping_(child|parent) *([a-zA-Z_0-9]*)/ui", $ref->getDocComment(), $matches);
-
 		if (count($matches[2]) == 2) {
 			$mapping_field_child = $matches[2][0];
 			$this->setMappingFieldChild($mapping_field_child ? $mapping_field_child : NULL);

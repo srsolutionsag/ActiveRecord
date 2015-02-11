@@ -32,15 +32,27 @@ class arParentList {
 
 
 	protected function determineParents() {
+		/**
+		 * @var $child_name ActiveRecord
+		 */
 		$child_name = get_class($this->getChild());
 		$child = $this->getChild();
 		$ref = new ReflectionClass($child_name);
 		$parent_name = $ref->getParentClass()->name;
+
 		while ($parent_name != self::ACTIVE_RECORD) {
+			$ref = new ReflectionClass($parent_name);
+			$meth = new ReflectionMethod($parent_name, 'getConnectorContainerName');
+			if ($ref->isAbstract() OR $meth->isAbstract()) {
+				//$child = $parent;
+				$parent_name = $ref->getParentClass()->name;
+				continue;
+			}
+
 			$parent = arFactory::getInstance($parent_name);
 			$ar_parent = arParent::getInstance($child, $parent);
 			$this->addParent($ar_parent);
-			$ref = new ReflectionClass($parent_name);
+
 			$child = $parent;
 			$parent_name = $ref->getParentClass()->name;
 		}

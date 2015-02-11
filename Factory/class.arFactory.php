@@ -28,7 +28,7 @@ class arFactory {
 				$obj = clone($obj);
 			}
 		} else {
-			throw new arException(arException::PRIVATE_CONTRUCTOR, 'Class: ' . $class_name);
+//			throw new arException(arException::PRIVATE_CONTRUCTOR, 'Class: ' . $class_name);
 		}
 
 		return $obj;

@@ -287,9 +287,12 @@ abstract class ActiveRecord implements arStorageInterface {
 	 * @return mixed
 	 */
 	public function wakeUp($field_name, $field_value) {
+		if (!$this->getArFieldList()->isField($field_name)) {
+			return NULL;
+		}
 		$field = $this->getArFieldList()->getFieldByName($field_name);
 		if ($field->autoConvertToDateTime()) {
-			//			return new DateTime($field_value);
+			return new DateTime($field_value);
 		}
 
 		return NULL;
@@ -339,8 +342,7 @@ abstract class ActiveRecord implements arStorageInterface {
 		$class = get_called_class();
 
 		return arCalledClassCache::get($class);
-
-//		return new $class();
+		//		return new $class();
 	}
 
 
@@ -583,10 +585,14 @@ abstract class ActiveRecord implements arStorageInterface {
 		}
 
 		foreach ($mapping as $k => $v) {
-			if ($this->wakeUp($k, $rec->{$k}) === NULL) {
-				$this->{$k} = $rec->{$k};
+			if ($this->getArFieldList()->isField($k)) {
+				if ($this->wakeUp($k, $rec->{$k}) === NULL) {
+					$this->{$k} = $rec->{$k};
+				} else {
+					$this->{$k} = $this->wakeUp($k, $rec->{$k});
+				}
 			} else {
-				$this->{$k} = $this->wakeUp($k, $rec->{$k});
+				$this->{$k} = $rec->{$k};
 			}
 		}
 	}
