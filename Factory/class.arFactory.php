@@ -24,11 +24,11 @@ class arFactory {
 		$ref = new ReflectionClass($class_name);
 		if ($ref->isInstantiable()) {
 			$obj = $ref->newInstanceArgs(array_merge(array( $primary_key ), $additional_arguments));
-			if ($primary_key == 0) {
+			if ($primary_key == 0 OR $primary_key == NULL) {
 				$obj = clone($obj);
 			}
 		} else {
-			throw new arException(arException::PRIVATE_CONTRUCTOR);
+			throw new arException(arException::PRIVATE_CONTRUCTOR, 'Class: ' . $class_name);
 		}
 
 		return $obj;

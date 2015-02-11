@@ -339,6 +339,8 @@ abstract class ActiveRecord implements arStorageInterface {
 		$class = get_called_class();
 
 		return arCalledClassCache::get($class);
+
+//		return new $class();
 	}
 
 

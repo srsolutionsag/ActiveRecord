@@ -234,7 +234,7 @@ class arFieldList {
 			$properties_array = array();
 			$declaring_class = $property->getDeclaringClass()->name;
 			if ($declaring_class == get_class($ar)) {
-				$properties_array[self::BELONGS_TO] = $ar->getConnectorContainerName();
+				$properties_array[self::BELONGS_TO] = $ar::returnDbTableName();//$ar->getConnectorContainerName();
 			} else {
 				$arParent = $this->parent_list->getParentByClassName($declaring_class);
 				if ($arParent instanceof arParent) {
@@ -367,8 +367,6 @@ class arFieldList {
 	public function setParentList($parent_list) {
 		$this->parent_list = $parent_list;
 	}
-
-
 }
 
 ?>
