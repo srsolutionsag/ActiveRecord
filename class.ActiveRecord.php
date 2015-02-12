@@ -412,13 +412,13 @@ abstract class ActiveRecord implements arStorageInterface {
 
 			$return = $this->arConnector->installDatabase($this, $fields);
 
-			$arParentList = $this->getArFieldList()->getParentList();
-			if ($arParentList->hasParents()) {
-				foreach ($arParentList->getParents() as $parent) {
-					$obj = $parent->getParent();
-					$obj->installDatabase();
-				}
-			}
+//			$arParentList = $this->getArFieldList()->getParentList();
+//			if ($arParentList->hasParents()) {
+//				foreach ($arParentList->getParents() as $parent) {
+//					$obj = $parent->getParent();
+//					$obj->installDatabase();
+//				}
+//			}
 
 			return $return;
 		} else {

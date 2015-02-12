@@ -367,6 +367,8 @@ class arFieldList {
 	public function setParentList($parent_list) {
 		$this->parent_list = $parent_list;
 	}
+
+
 }
 
 ?>
