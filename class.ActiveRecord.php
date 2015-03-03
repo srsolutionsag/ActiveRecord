@@ -9,6 +9,7 @@ require_once('Storage/int.arStorageInterface.php');
 require_once('Factory/class.arFactory.php');
 require_once('Cache/class.arCalledClassCache.php');
 require_once('Connector/class.arConnectorMap.php');
+
 /**
  * Class ActiveRecord
  *
@@ -116,7 +117,7 @@ abstract class ActiveRecord implements arStorageInterface {
 	 * @param arConnector $connector
 	 */
 	public function __construct($primary_key = 0, arConnector $connector = NULL) {
-		if($connector == NULL) {
+		if ($connector == NULL) {
 			$connector = new arConnectorDB();
 		}
 		//$this->arConnector = $connector;
@@ -416,18 +417,18 @@ abstract class ActiveRecord implements arStorageInterface {
 
 			$return = $this->getArConnector()->installDatabase($this, $fields);
 
-//			$arParentList = $this->getArFieldList()->getParentList();
-//			if ($arParentList->hasParents()) {
-//				foreach ($arParentList->getParents() as $parent) {
-//					$obj = $parent->getParent();
-//					$obj->installDatabase();
-//				}
-//			}
+			//			$arParentList = $this->getArFieldList()->getParentList();
+			//			if ($arParentList->hasParents()) {
+			//				foreach ($arParentList->getParents() as $parent) {
+			//					$obj = $parent->getParent();
+			//					$obj->installDatabase();
+			//				}
+			//			}
 
 			return $return;
 		} else {
- 			return $this->getArConnector()->updateDatabase($this);
- 		}
+			return $this->getArConnector()->updateDatabase($this);
+		}
 	}
 
 
@@ -450,7 +451,7 @@ abstract class ActiveRecord implements arStorageInterface {
 	 */
 	final protected function updateDatabase() {
 		if ($this->tableExists()) {
-			return $this->arConnector->updateDatabase($this);
+			return $this->getArConnector()->updateDatabase($this);
 		} else {
 			return $this->installDatabase();
 		}
@@ -498,20 +499,10 @@ abstract class ActiveRecord implements arStorageInterface {
 
 
 	public function create() {
-<<<<<<< HEAD
-		$arField = $this->getArFieldList()->getPrimaryField();
-		if ($arField->getSequence()) {
-			$this->{$arField->getName()} = $this->arConnector->nextID($this);
-		}
-
-		$this->arConnector->create($this, $this->getArrayForConnector(true));
-=======
 		if ($this->getArFieldList()->getPrimaryField()->getSequence()) {
 			$this->id = $this->getArConnector()->nextID($this);
 		}
-
 		$this->getArConnector()->create($this, $this->getArrayForConnector());
->>>>>>> 3947e98... Memory Optimization
 		arObjectCache::store($this);
 	}
 
@@ -538,26 +529,21 @@ abstract class ActiveRecord implements arStorageInterface {
 
 
 	public function read() {
-<<<<<<< HEAD
-		$rec = $this->arConnector->read($this);
-		if (!$rec AND $this->ar_safe_read == true) {
-=======
 		$records = $this->getArConnector()->read($this);
 		if (count($records) == 0 AND $this->ar_safe_read == true) {
->>>>>>> 3947e98... Memory Optimization
 			throw new arException(arException::RECORD_NOT_FOUND, $this->getPrimaryFieldValue());
-		} elseif (!$rec AND $this->ar_safe_read == false) {
+		} elseif (!$records AND $this->ar_safe_read == false) {
 			$this->is_new = true;
 		}
 
-		$this->mapFields($rec);
+		$this->mapFields($records);
 		if ($this->getArFieldList()->getParentList()->hasParents()) {
 			foreach ($this->getArFieldList()->getParentList()->getParents() as $parent) {
 				if (!$parent->hasMapping()) {
 					throw new arException(arException::NO_MAPPING);
 				}
 
-				$parent_obj = arFactory::getInstance(get_class($parent->getParent()), $rec->{$parent->getMappingFieldParent()});
+				$parent_obj = arFactory::getInstance(get_class($parent->getParent()), $records->{$parent->getMappingFieldParent()});
 				$this->mapFields($parent_obj->__asStdClass(), $parent_obj->getArrayForConnector());
 			}
 		}
@@ -568,8 +554,7 @@ abstract class ActiveRecord implements arStorageInterface {
 
 
 	public function update() {
-<<<<<<< HEAD
-		$this->arConnector->update($this);
+		$this->getArConnector()->update($this);
 		$arParentList = $this->getArFieldList()->getParentList();
 		if ($arParentList->hasParents()) {
 			foreach ($arParentList->getParents() as $arParent) {
@@ -579,9 +564,6 @@ abstract class ActiveRecord implements arStorageInterface {
 				$obj->update();
 			}
 		}
-=======
-		$this->getArConnector()->update($this);
->>>>>>> 3947e98... Memory Optimization
 		arObjectCache::store($this);
 	}
 
