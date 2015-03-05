@@ -410,6 +410,7 @@ abstract class ActiveRecord implements arStorageInterface {
 		if (!$this->tableExists()) {
 			$fields = array();
 			foreach ($this->getArFieldList()->getFields() as $field) {
+
 				if ($field->getBelongsTo() == $this->getConnectorContainerName()) {
 					$fields[$field->getName()] = $field->getAttributesForConnector();
 				}
@@ -564,6 +565,7 @@ abstract class ActiveRecord implements arStorageInterface {
 				$obj->update();
 			}
 		}
+
 		arObjectCache::store($this);
 	}
 
