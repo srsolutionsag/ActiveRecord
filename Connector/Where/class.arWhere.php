@@ -55,7 +55,7 @@ class arWhere extends arStatement {
 				$statement = $this->getFieldname();
 			}
 
-			if (is_array($this->getValue())) {
+			if (is_array($this->getValue()) && count($this->getValue()) > 0) {
 				if (in_array($this->getOperator(), array( 'IN', 'NOT IN', 'NOTIN' ))) {
 					$statement .= ' ' . $this->getOperator() . ' (';
 				} else {
@@ -68,8 +68,9 @@ class arWhere extends arStatement {
 				$statement .= implode(', ', $values);
 				$statement .= ')';
 			} else {
-				if ($this->getValue() === NULL) {
+				if ($this->getValue() === NULL || is_array($this->getValue())) {
 					$this->setOperator('IS');
+					$this->setValue(NULL);
 				}
 				$statement .= ' ' . $this->getOperator();
 				$statement .= ' ' . $ar->getArConnector()->quote($this->getValue(), $type);
