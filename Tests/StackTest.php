@@ -67,6 +67,12 @@ class StackTest extends PHPUnit_Framework_TestCase {
 		$entry->setId(3);
 		$entry->setUsrIds(array( 100, 2, 7 ));
 		$entry->create();
+
+		$entry = new arUnitTestRecord();
+		$entry->setDescription("Eescription");
+		$entry->setTitle(Null);
+		$entry->setId(4);
+		$entry->create();
 	}
 
 
@@ -117,6 +123,11 @@ class StackTest extends PHPUnit_Framework_TestCase {
 		$second = array_shift($array);
 		$this->assertEquals($first["id"], 1);
 		$this->assertEquals($second["id"], 3);
+
+		// empty array is cast into IS NULL
+		$query = arUnitTestRecord::where(array( "title" => array() ));
+		$array = $query->getArray();
+		$this->assertEquals(count($array), 1);
 	}
 
 
