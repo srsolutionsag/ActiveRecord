@@ -75,7 +75,7 @@ class arConnectorDB extends arConnector {
 			$existing_indices[] = $rec->column_name;
 		}
 		foreach ($arFieldList->getFields() as $i => $arField) {
-			if ($arField->getIndex() === 'true') {
+			if ($arField->getIndex() === true) {
 				if (!in_array($arField->getName(), $existing_indices)) {
 					$ilDB->addIndex($ar->getConnectorContainerName(), array( $arField->getName() ), 'i' . $i);
 				}
