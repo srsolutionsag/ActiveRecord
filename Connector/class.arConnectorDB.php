@@ -96,6 +96,7 @@ class arConnectorDB extends arConnector {
 				$ilDB->addTableColumn($ar->getConnectorContainerName(), $field->getName(), $field->getAttributesForConnector());
 			}
 		}
+		$this->updateIndices($ar);
 
 		return true;
 	}
