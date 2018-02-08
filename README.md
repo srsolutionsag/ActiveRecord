@@ -27,12 +27,7 @@ Grundsätzlich veröffentlichen wir unsere Plugins (Extensions, Add-Ons), weil w
 
 Sind Sie interessiert an einer Plugin-Patenschaft (https://studer-raimann.ch/produkte/ilias-plugins/plugin-patenschaften/ ) Rufen Sie uns an oder senden Sie uns eine E-Mail.
 
-Contact
--------
-studer + raimann ag  
-Waldeggstrasse 72  
-3097 Liebefeld  
-Switzerland 
-
+### Contact
 info@studer-raimann.ch  
-www.studer-raimann.ch  
+https://studer-raimann.ch  
+
